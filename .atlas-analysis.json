@@ -1,0 +1,90 @@
+{
+  "projectType": "saas",
+  "projectName": "ThystTV",
+  "projectDescription": "A third-party Twitch client for Android with floating chat, watch statistics, and gesture controls.",
+  "theme": "almond",
+  "primaryColor": "#9146FF",
+  "lightColor": "#B380FF",
+  "darkColor": "#6E34CC",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/floating-chat",
+              "features/watch-statistics",
+              "features/gesture-controls",
+              "features/playback"
+            ]
+          },
+          {
+            "group": "User Guide",
+            "pages": [
+              "guide/settings",
+              "guide/customization",
+              "guide/privacy"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/building",
+              "development/architecture",
+              "development/contributing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Architecture",
+        "groups": [
+          {
+            "group": "System Design",
+            "pages": [
+              "architecture/overview",
+              "architecture/gesture-system",
+              "architecture/statistics",
+              "architecture/chat-system"
+            ]
+          },
+          {
+            "group": "Technical Reference",
+            "pages": [
+              "technical/data-models",
+              "technical/repositories",
+              "technical/ui-components"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Floating chat overlay with customizable position and transparency",
+    "Screen time tracking and watch statistics with visual charts",
+    "Gesture-based video controls (volume, brightness, seek, playback speed)",
+    "Material 3 design with dark theme support",
+    "Privacy-first local data storage"
+  ],
+  "publicApiSurface": [
+    "PlayerGestureListener - Gesture detection and handling",
+    "PlayerGestureHelper - Gesture calculation utilities",
+    "StatsRepository - Watch statistics data management",
+    "ScreenTimeDao - Screen time database operations",
+    "StreamWatchStatsDao - Stream watch statistics",
+    "ChatAdapter - Chat message rendering",
+    "PlayerFragment - Main video player interface",
+    "StatsFragment - Statistics visualization"
+  ]
+}
