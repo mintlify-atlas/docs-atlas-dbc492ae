@@ -1,0 +1,226 @@
+---
+title: Installation
+description: Learn how to install ThystTV on your Android device
+---
+
+## Install from APK
+
+The easiest way to install ThystTV is to download the pre-built APK from GitHub Releases.
+
+<Steps>
+  <Step title="Download the APK">
+    Visit the [ThystTV Releases page](https://github.com/YOUR_USERNAME/ThystTV/releases) and download the latest APK file:
+    
+    - For the latest version: Download from the "latest" release
+    - For a specific version: Download from a tagged release (e.g., v1.1.2)
+    
+    The APK file will be named `ThystTV-{version}.apk`
+  </Step>
+  
+  <Step title="Enable unknown sources">
+    Before installing, you need to allow installation from unknown sources:
+    
+    1. Open **Settings** on your Android device
+    2. Navigate to **Security** or **Privacy**
+    3. Find **Install unknown apps** or **Unknown sources**
+    4. Enable it for your browser or file manager
+    
+    <Warning>
+      Only enable this setting temporarily and disable it after installation for security.
+    </Warning>
+  </Step>
+  
+  <Step title="Install the APK">
+    1. Open the downloaded APK file from your notifications or file manager
+    2. Tap **Install** when prompted
+    3. Wait for the installation to complete
+    4. Tap **Open** to launch ThystTV, or find it in your app drawer
+  </Step>
+  
+  <Step title="Verify installation">
+    Check the app version in **Settings** → **About**. You should see:
+    
+    - App version: 1.1.2 (or later)
+    - Package ID: `com.tzii.thysttv`
+  </Step>
+</Steps>
+
+<Note>
+  ThystTV is not available on the Google Play Store. APK installation is the only distribution method.
+</Note>
+
+## Build from source
+
+If you want to build ThystTV yourself, follow these steps.
+
+### Prerequisites
+
+Before building, ensure you have the following installed:
+
+- **Java Development Kit (JDK) 21**: Required for Android development
+- **Android SDK**: With API level 36 (compile SDK)
+- **Git**: For cloning the repository
+- **4GB+ RAM**: Recommended for building Android projects
+
+<Tip>
+  You can install JDK 21 using [SDKMAN](https://sdkman.io/): `sdk install java 21-tem`
+</Tip>
+
+### Build steps
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the ThystTV repository to your local machine:
+    
+    ```bash
+    git clone https://github.com/YOUR_USERNAME/ThystTV.git
+    cd ThystTV
+    ```
+  </Step>
+  
+  <Step title="Build debug APK">
+    Build a debug version of the app for testing:
+    
+    ```bash
+    ./gradlew assembleDebug
+    ```
+    
+    The debug APK will be generated at:
+    ```
+    app/build/outputs/apk/debug/app-debug.apk
+    ```
+    
+    The debug build:
+    - Has package ID `com.tzii.thysttv.debug`
+    - Includes `-DEBUG` version suffix
+    - Can be installed alongside the release version
+  </Step>
+  
+  <Step title="Build release APK (optional)">
+    To build an optimized release version:
+    
+    ```bash
+    ./gradlew assembleRelease
+    ```
+    
+    <Warning>
+      Release builds require signing with a keystore. Without a keystore, this will fall back to debug signing.
+    </Warning>
+    
+    The release APK will be at:
+    ```
+    app/build/outputs/apk/release/app-release.apk
+    ```
+    
+    Release builds include:
+    - ProGuard obfuscation
+    - Resource shrinking
+    - Code minification
+    - Smaller file size
+  </Step>
+  
+  <Step title="Install on device">
+    Install the APK to your connected Android device:
+    
+    ```bash
+    # For debug build
+    adb install app/build/outputs/apk/debug/app-debug.apk
+    
+    # For release build
+    adb install app/build/outputs/apk/release/app-release.apk
+    ```
+    
+    Or transfer the APK file to your device and install it manually.
+  </Step>
+</Steps>
+
+### Run tests
+
+You can run the test suite to verify your build:
+
+```bash
+./gradlew test
+```
+
+This runs unit tests including:
+- Gesture system logic tests
+- Data model tests
+- ViewModel tests
+
+<Tip>
+  The debug build includes LeakCanary for memory leak detection during development.
+</Tip>
+
+### Build configuration
+
+ThystTV uses the following build configuration:
+
+| Setting | Value |
+|---------|-------|
+| Min SDK | 23 (Android 6.0) |
+| Target SDK | 36 (Android 14+) |
+| Compile SDK | 36 |
+| JVM Toolchain | 21 |
+| Application ID | `com.tzii.thysttv` |
+| Version | 1.1.2 (versionCode 5) |
+
+### Gradle wrapper
+
+The project includes a Gradle wrapper, so you don't need to install Gradle separately:
+
+```bash
+# Linux/macOS
+./gradlew <command>
+
+# Windows
+gradlew.bat <command>
+```
+
+## Troubleshooting
+
+### Installation failed
+
+If the APK installation fails:
+
+1. **Check Android version**: ThystTV requires Android 6.0 or higher
+2. **Free up storage**: Ensure you have at least 100MB free space
+3. **Uninstall previous version**: Remove any existing ThystTV installations
+4. **Verify APK integrity**: Re-download the APK if the file may be corrupted
+
+### Build failed
+
+If building from source fails:
+
+1. **Check Java version**: Run `java -version` and verify it's JDK 21
+2. **Clean build**: Run `./gradlew clean` then try again
+3. **Update Gradle**: The wrapper should handle this, but run `./gradlew wrapper --gradle-version=latest`
+4. **Check dependencies**: Ensure you have a stable internet connection for dependency downloads
+
+### ADB not found
+
+If `adb` command is not found:
+
+1. Install Android SDK Platform Tools
+2. Add the platform-tools directory to your PATH:
+   ```bash
+   export PATH=$PATH:$ANDROID_HOME/platform-tools
+   ```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick start"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Learn how to use ThystTV and watch your first stream
+  </Card>
+  <Card
+    title="Contributing"
+    icon="code-pull-request"
+    href="https://github.com/YOUR_USERNAME/ThystTV"
+  >
+    Report bugs or contribute to ThystTV development
+  </Card>
+</CardGroup>

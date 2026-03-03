@@ -1,0 +1,350 @@
+---
+title: 'UI Components'
+description: 'Key fragments and UI components in ThystTV'
+icon: 'mobile-screen'
+---
+
+## Overview
+
+ThystTV's UI is built with modern Android components: Fragments, ViewBinding, ViewModel, and Jetpack Navigation. The app follows single-activity architecture with Fragment-based navigation.
+
+## Core Fragments
+
+### PlayerFragment
+
+The video/stream player with advanced controls and PiP support.
+
+**Location**: `ui/player/PlayerFragment.kt`
+
+```kotlin
+@AndroidEntryPoint
+class PlayerFragment : BaseNetworkFragment() {
+    private var _binding: FragmentPlayerBinding? = null
+    private val binding get() = _binding!!
+    private val viewModel: PlayerViewModel by viewModels()
+}
+```
+
+<Accordion title="PlayerFragment Features">
+  - **Multi-format playback**: Supports streams, VODs, and clips
+  - **Picture-in-Picture**: Android PiP mode support
+  - **Advanced controls**: Quality selection, speed control, sleep timer
+  - **Gesture controls**: Swipe for volume/brightness, double-tap to seek
+  - **Chat integration**: Side-by-side chat view
+  - **Stats tracking**: Records watch sessions for analytics
+  - **Offline support**: Plays downloaded videos
+</Accordion>
+
+#### Player Implementation Variants
+
+PlayerFragment delegates to different player implementations:
+
+<ParamField path="ExoPlayerFragment" type="Fragment">
+  Legacy ExoPlayer 2 implementation
+</ParamField>
+
+<ParamField path="Media3Fragment" type="Fragment">
+  Modern Media3 implementation (default)
+</ParamField>
+
+<ParamField path="MediaPlayerFragment" type="Fragment">
+  Android MediaPlayer fallback
+</ParamField>
+
+#### Key Player Methods
+
+```kotlin
+// Initialize player with stream/video
+fun initialize(stream: Stream?, video: Video?, clip: Clip?, offlineVideo: OfflineVideo?)
+
+// Handle playback state changes
+override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int)
+
+// Gesture handling
+private fun handleDoubleTap(x: Float)
+private fun handleSwipeVertical(deltaY: Float, x: Float)
+
+// PiP mode
+private fun enterPictureInPicture()
+```
+
+### ChatFragment
+
+Real-time Twitch chat with emote support and moderation tools.
+
+**Location**: `ui/chat/ChatFragment.kt`
+
+```kotlin
+@AndroidEntryPoint
+class ChatFragment : BaseNetworkFragment(), 
+    MessageClickedDialog.OnButtonClickListener,
+    ReplyClickedDialog.OnButtonClickListener {
+    
+    private var _binding: FragmentChatBinding? = null
+    private val binding get() = _binding!!
+    private val viewModel: ChatViewModel by viewModels()
+    private var adapter: ChatAdapter? = null
+}
+```
+
+<Accordion title="ChatFragment Features">
+  - **Real-time messaging**: IRC and WebSocket support
+  - **Rich emote display**: Twitch, BTTV, FFZ, 7TV emotes
+  - **Auto-complete**: Username and emote suggestions
+  - **Message translation**: ML Kit integration for auto-translation
+  - **Moderation tools**: Timeout, ban, delete messages
+  - **Raid notifications**: Visual alerts for raids
+  - **Chat badges**: Subscriber, moderator, VIP badges
+  - **Recent emotes**: Quick access to frequently used emotes
+</Accordion>
+
+#### Chat Message Handling
+
+```kotlin
+// Send message to chat
+private fun sendMessage(message: String, replyId: String? = null)
+
+// Handle incoming messages
+private fun onMessageReceived(message: ChatMessage)
+
+// Moderation actions
+private fun onTimeout(username: String, duration: Int)
+private fun onBan(username: String)
+private fun onDeleteMessage(messageId: String)
+
+// Translation
+private fun translateMessage(message: ChatMessage, targetLanguage: String)
+```
+
+#### Emote Menu
+
+ChatFragment includes an expandable emote picker:
+
+```kotlin
+private fun toggleEmoteMenu(show: Boolean) {
+    binding.emoteMenuContainer.isVisible = show
+    if (show) {
+        loadEmotes()
+    }
+}
+```
+
+The emote menu is organized in tabs:
+- Recent emotes
+- Channel emotes
+- Global emotes
+- BTTV emotes
+- FFZ emotes
+- 7TV emotes
+
+### StatsFragment
+
+Viewing statistics and analytics dashboard.
+
+**Location**: `ui/stats/StatsFragment.kt`
+
+```kotlin
+@AndroidEntryPoint
+class StatsFragment : Fragment(R.layout.fragment_stats) {
+    private val viewModel: StatsViewModel by viewModels()
+    private var binding: FragmentStatsBinding? = null
+}
+```
+
+<Accordion title="StatsFragment Displays">
+  - **Screen time chart**: 7-day bar chart with daily totals
+  - **Watch streaks**: Current and longest viewing streaks
+  - **Top channels**: Most-watched streamers with total time
+  - **Category breakdown**: Pie chart of game categories
+  - **Peak times heatmap**: Hour-of-day viewing patterns
+  - **Loyalty metrics**: Consecutive days per streamer
+</Accordion>
+
+#### Stats Data Flow
+
+```kotlin
+override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    viewLifecycleOwner.lifecycleScope.launch {
+        viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            launch {
+                viewModel.screenTime.collectLatest { screenTimes ->
+                    updateScreenTimeDisplay(binding, screenTimes)
+                }
+            }
+            launch {
+                viewModel.topStreams.collectLatest { streams ->
+                    adapter.submitList(streams)
+                }
+            }
+            launch {
+                viewModel.watchStreak.collectLatest { streak ->
+                    updateStreakDisplay(binding, streak)
+                }
+            }
+        }
+    }
+}
+```
+
+<Expandable title="Why multiple launch blocks?">
+  Each `launch` collects from a separate Flow concurrently. This allows different parts of the UI to update independently as new data arrives, improving responsiveness.
+</Expandable>
+
+## Content Browsing Fragments
+
+### FollowedStreamsFragment
+
+Displays live streams from followed channels.
+
+**Location**: `ui/following/streams/FollowedStreamsFragment.kt`
+
+```kotlin
+@AndroidEntryPoint
+class FollowedStreamsFragment : PagedListFragment<Stream>() {
+    override val viewModel: FollowedStreamsViewModel by viewModels()
+}
+```
+
+Uses Paging 3 for infinite scroll with the `FollowedStreamsDataSource`.
+
+### GamePagerFragment
+
+Tab-based game page with streams, videos, and clips.
+
+**Location**: `ui/game/GamePagerFragment.kt`
+
+Contains three child fragments:
+- `GameStreamsFragment` - Live streams in this category
+- `GameVideosFragment` - VODs in this category
+- `GameClipsFragment` - Clips in this category
+
+### SearchPagerFragment
+
+Search results across multiple content types.
+
+**Location**: `ui/search/SearchPagerFragment.kt`
+
+Tabs:
+- `ChannelSearchFragment`
+- `StreamSearchFragment`
+- `GameSearchFragment`
+- `VideoSearchFragment`
+
+## Base Classes
+
+### BaseNetworkFragment
+
+Base class for fragments requiring network connectivity.
+
+```kotlin
+abstract class BaseNetworkFragment : Fragment() {
+    protected fun checkConnection(): Boolean
+    protected fun showNetworkError()
+}
+```
+
+### PagedListFragment
+
+Base class for paginated lists using Paging 3.
+
+```kotlin
+abstract class PagedListFragment<T : Any> : BaseNetworkFragment() {
+    abstract val viewModel: ViewModel
+    protected lateinit var adapter: PagingDataAdapter<T, *>
+}
+```
+
+## Custom Views
+
+### DailyBarChartView
+
+Custom bar chart for screen time visualization.
+
+```kotlin
+class DailyBarChartView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null
+) : View(context, attrs) {
+    data class DayData(val label: String, val seconds: Long)
+    
+    fun setData(days: List<DayData>)
+}
+```
+
+### ChatRecyclerView
+
+Optimized RecyclerView for chat messages with auto-scroll.
+
+```kotlin
+class ChatRecyclerView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null
+) : RecyclerView(context, attrs) {
+    var autoScroll = true
+    
+    fun scrollToBottomIfNeeded()
+}
+```
+
+## ViewBinding Pattern
+
+All fragments use ViewBinding for type-safe view access:
+
+```kotlin
+private var _binding: FragmentExampleBinding? = null
+private val binding get() = _binding!!
+
+override fun onCreateView(
+    inflater: LayoutInflater,
+    container: ViewGroup?,
+    savedInstanceState: Bundle?
+): View {
+    _binding = FragmentExampleBinding.inflate(inflater, container, false)
+    return binding.root
+}
+
+override fun onDestroyView() {
+    super.onDestroyView()
+    _binding = null
+}
+```
+
+<Accordion title="Why nullable backing property?">
+  The binding should only exist between `onCreateView` and `onDestroyView`. Setting `_binding = null` in `onDestroyView` prevents memory leaks by releasing view references when the fragment's view is destroyed.
+</Accordion>
+
+## Navigation
+
+Fragments navigate using Navigation Component:
+
+```kotlin
+// Navigate to channel page
+findNavController().navigate(
+    ChannelPagerFragmentDirections.actionChannelToPlayer(
+        channelId = channelId,
+        channelLogin = channelLogin
+    )
+)
+
+// Navigate with bundle
+findNavController().navigate(
+    R.id.action_main_to_search,
+    bundleOf("query" to searchQuery)
+)
+```
+
+## Lifecycle-Aware Data Collection
+
+Fragments collect Flow data in a lifecycle-safe manner:
+
+```kotlin
+viewLifecycleOwner.lifecycleScope.launch {
+    viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+        viewModel.uiState.collectLatest { state ->
+            updateUI(state)
+        }
+    }
+}
+```
+
+This ensures data collection starts when STARTED and stops when STOPPED, preventing wasted resources and crashes.

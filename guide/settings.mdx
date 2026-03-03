@@ -1,0 +1,454 @@
+---
+title: App Settings
+description: Configure ThystTV to match your preferences
+icon: gear
+---
+
+ThystTV provides extensive customization options to tailor your viewing experience. Access settings by tapping the menu icon and selecting "Settings".
+
+## Player Settings
+
+### Gesture Controls
+
+<Info>
+Gesture controls allow you to adjust volume, brightness, seek, and playback speed without blocking the video.
+</Info>
+
+<Accordion title="Gesture Configuration">
+
+**Enable/Disable Gestures**
+- Toggle gesture controls on or off
+- Gestures are automatically disabled when player controls are visible
+
+**Haptic Feedback**
+- Optional vibration feedback during gesture adjustments
+- Disabled by default to preserve battery
+
+**Sensitivity**
+- Adjust how responsive gestures are to your swipes
+- Options: Low, Normal (default), High
+
+**Zone Split**
+- Configure the boundary between top/bottom gesture zones
+- Affects seek vs. playback speed gesture areas
+
+</Accordion>
+
+### Video Playback
+
+<Accordion title="Quality & Performance">
+
+**Default Quality**
+- Set preferred stream quality (Auto, 1080p60, 720p60, 480p, 360p, 160p, Audio Only)
+- Default: Saved (remembers last selection)
+
+**Data Saver**
+- Automatically lower quality on cellular connections
+- Configure separate cellular quality preference
+
+**Background Playback**
+- Continue audio when app is minimized
+- Picture-in-Picture mode support
+- Background audio when screen is locked
+
+**Video Position Saving**
+- Automatically resume VODs where you left off
+- Can be cleared via "Delete video positions"
+
+</Accordion>
+
+<Accordion title="Advanced Player Options">
+
+**Audio Settings**
+- Audio focus (pause when other apps play audio)
+- Handle audio becoming noisy (pause when headphones disconnect)
+- Background audio track support
+
+**Display Options**
+- Disable background video rendering
+- Keep screen on when paused
+- Avoid rounded corners (padding for notched displays)
+- Move player freely in landscape mode
+
+</Accordion>
+
+### Buffer Settings
+
+<Warning>
+Only modify buffer settings if you experience playback issues. Incorrect values can cause stuttering or increased latency.
+</Warning>
+
+Configure advanced buffering parameters:
+
+- **Min Buffer**: 15000ms (default)
+- **Max Buffer**: 50000ms (default)
+- **Buffer for Playback**: 2000ms (default)
+- **Rebuffer**: 2000ms (default)
+- **Live Target Offset**: 2000ms (default)
+- **Live Min/Max Speed**: Control playback speed adjustments for live streams
+
+### Player Menu Customization
+
+Toggle which options appear in the player menu:
+
+- Quality selector
+- Playback speed
+- Viewer list
+- Chapters
+- Download
+- Bookmark
+- Sleep timer
+- Aspect ratio
+- Volume
+- Subtitles toggle
+- Restart player
+- Chat bar toggle
+- Chat toggle
+- Reload emotes
+- Disconnect chat
+
+## Chat Settings
+
+### Appearance
+
+<Accordion title="Message Display">
+
+**Username Styling**
+- Bold usernames
+- Random colors for usernames without set colors
+- Theme-adapted username colors for better contrast
+
+**Timestamps**
+- Show/hide message timestamps
+- Format options: 12-hour, 24-hour
+
+**Size Adjustments**
+- Text size (default: 14)
+- Emote size (default: 29.5)
+- Badge size (default: 18.5)
+- Chat size modifier: 1-200% (default: 100%)
+- Landscape chat width: 0-100% (default: 30%)
+
+</Accordion>
+
+### Emotes & Images
+
+<Accordion title="Emote Providers">
+
+**Third-Party Emote Support**
+- 7TV (SevenTV)
+- BTTV (BetterTTV)
+- FFZ (FrankerFaceZ)
+
+**7TV Features**
+- Personal emotes
+- Live emote updates
+- Name paints (custom username colors)
+- 7TV badges
+
+**Emote Settings**
+- Animated GIF emotes
+- Zero-width (overlay) emotes
+- System message emotes
+
+</Accordion>
+
+<Accordion title="Image Quality">
+
+**Image Library**
+- Choose rendering library for emotes
+- Options affect performance and compatibility
+
+**WebP Support**
+- Use WebP format for better compression
+- Reduces data usage
+
+**Image Quality**
+- Scale: 1x, 2x, 3x, 4x (default: 4x)
+- Higher quality uses more bandwidth
+
+</Accordion>
+
+### Chat Behavior
+
+<Accordion title="Message Limits">
+
+**Message Limit**
+- Maximum messages stored: 1-1000 (default: 600)
+- Higher limits use more memory
+
+**Recent Messages**
+- Show recent messages when joining chat
+- Limit: 1-800 (default: 100)
+
+</Accordion>
+
+<Accordion title="Interactive Features">
+
+**PubSub Events**
+- Channel point redemptions
+- Automatically collect channel points
+- Point collection notifications
+
+**Stream Events**
+- Show raid notifications
+- Auto-switch to raided channel
+- Show polls
+- Show predictions
+
+**Chat Moderation**
+- Show deleted messages
+- Show cleared chat notifications
+- Show user notices (subs, resubs, etc.)
+- First message visibility options
+
+</Accordion>
+
+### Translation
+
+<Info>
+ThystTV includes offline translation powered by on-device ML models.
+</Info>
+
+- Enable/disable chat message translation
+- Set target language (default: English)
+- Manage downloaded language models
+- Translate messages on-demand or automatically
+
+### Connection Settings
+
+<Accordion title="Advanced Chat Options">
+
+**Protocol**
+- Use WebSocket (recommended)
+- Use SSL/TLS encryption
+- Enable PubSub for advanced features
+
+**Chat Overlay**
+- Keep chat open during fullscreen
+- Floating chat transparency: 0-100%
+- High visibility mode for better readability
+
+**Other**
+- Disable chat entirely
+
+</Accordion>
+
+## UI Settings
+
+### Layout
+
+<Accordion title="Grid Configuration">
+
+**Column Count**
+- Portrait mode columns (default varies by screen size)
+- Landscape mode columns (default varies by screen size)
+
+**Stream Previews**
+- Show/hide stream preview thumbnails
+- Compact mode options: disabled, always, Wi-Fi only
+
+</Accordion>
+
+<Accordion title="Navigation Customization">
+
+**Tab Organization**
+- Customize navigation tabs order and visibility
+- Configure Following section tabs
+- Configure Saved section tabs
+- Configure Channel page tabs
+- Configure Game page tabs
+- Configure Search tabs
+
+**Follow Button Location**
+- Choose where the follow button appears
+
+**Start Screen**
+- Set which Following tab opens by default
+
+</Accordion>
+
+### Display Options
+
+<Accordion title="Visual Elements">
+
+**User Display**
+- Name display format (username, display name, or both)
+- Round user avatars
+- Compact number formatting (1.2K instead of 1,200)
+
+**Stream Information**
+- Show stream uptime
+- Show tags
+- Show broadcaster count for games
+
+**Interface Features**
+- Scroll to top button
+- VOD time remaining indicator
+- Follow/Saved/Game pagers
+
+</Accordion>
+
+### Search
+
+- Store recent searches
+- Clear recent search history
+
+## Theme Settings
+
+### Theme Selection
+
+<Accordion title="Theme Options">
+
+**App Theme**
+- Light theme
+- Dark theme
+- Follow system theme
+
+**Custom Theme Scheduling**
+- Set different themes for light/dark mode
+- Example: Use one theme during day, another at night
+
+</Accordion>
+
+### Visual Styling
+
+<Accordion title="Material Design Options">
+
+**Rounded Corners**
+- None, Small, Medium, Large
+
+**Layout Density**
+- Reduced padding (more compact)
+- Compact text
+
+**Interface Elements**
+- App bar lift on scroll
+- Bottom navigation color accent
+- Material 3 design system
+
+</Accordion>
+
+## Network Settings
+
+### Proxy Configuration
+
+<Warning>
+Proxy settings are for advanced users. Incorrect configuration may prevent streams from loading.
+</Warning>
+
+<Accordion title="Stream Proxy">
+
+**Custom Proxy**
+- Enable custom stream proxy
+- Default: `https://api.ttv.lol/playlist/$channel.m3u8`
+- Supports playlist manipulation and alternative backends
+
+**Additional Proxy Settings**
+- Configure advanced proxy parameters
+- Custom headers for stream requests
+
+</Accordion>
+
+### Playback Token Settings
+
+<Accordion title="Advanced Playback Configuration">
+
+**Stream Tokens**
+- Supported codecs (default: av1,h265,h264)
+- Device ID (randomized or custom)
+- Player type (default: site)
+- Include GQL token for subscriber-only streams
+- Custom stream headers
+
+**VOD Tokens**
+- Video player type (default: channel_home_live)
+- Include GQL token for subscriber content
+- Skip video access token options
+
+**Ad Blocking**
+- Hide player during ads (experimental)
+
+</Accordion>
+
+## General Settings
+
+### Language & Localization
+
+- App language (auto-detect or manual selection)
+- Follows system language by default
+
+### Display
+
+- Draw behind display cutouts (notches)
+- Enables edge-to-edge display on supported devices
+
+### Background Services
+
+<Accordion title="Background Features">
+
+**Live Notifications**
+- Get notified when followed channels go live
+- Configure notification preferences
+
+**Picture-in-Picture**
+- Enable/disable PiP mode
+- Configurable for different scenarios
+
+**Background Audio**
+- Play audio when app is in background
+- Continue when screen is locked
+- Options for PiP closed/locked states
+
+</Accordion>
+
+### Data Management
+
+<Accordion title="Backup & Restore">
+
+**Backup Settings**
+- Export app settings and preferences
+- Save to device or cloud storage
+
+**Restore Settings**
+- Import previously saved settings
+- Useful when switching devices
+
+**Clear Data**
+- Delete video positions
+- Clear recent searches
+
+</Accordion>
+
+### Updates
+
+- Check for updates manually
+- Configure automatic update checking
+- Update notification preferences
+
+### Downloads
+
+<Accordion title="Download Configuration">
+
+**Storage Location**
+- Internal storage
+- SD card (if available)
+- Custom directory selection
+
+**Download Behavior**
+- Configure download quality
+- Network preferences (Wi-Fi only, etc.)
+
+</Accordion>
+
+## Debug Settings
+
+<Warning>
+Debug settings are intended for troubleshooting. Enable only when requested by support or for development purposes.
+</Warning>
+
+Access advanced debugging tools and logging options for diagnosing issues.
+
+## API Token Settings
+
+Configure custom API tokens for Twitch authentication and advanced features. See [Quickstart](/quickstart) for authentication details.

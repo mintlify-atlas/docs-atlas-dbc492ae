@@ -1,0 +1,520 @@
+---
+title: Chat System Architecture
+description: Real-time chat and replay architecture for live streams and VODs
+---
+
+ThystTV's chat system supports both live chat via WebSocket/IRC and chat replay for VODs, with extensive third-party emote integration and real-time event handling.
+
+## System Overview
+
+The chat system is a complex, event-driven architecture that handles:
+- Live chat via WebSocket or IRC
+- Chat replay synchronized with video playback
+- Third-party emotes (7TV, BTTV, FFZ)
+- PubSub events (raids, polls, predictions)
+- Message translation and moderation features
+
+## Core Components
+
+### 1. ChatViewModel
+
+**Location**: `ui/chat/ChatViewModel.kt`
+
+**Role**: Manages chat state, connections, and emote loading
+
+**Key Responsibilities**:
+- Establishes and manages chat connections (IRC/WebSocket)
+- Loads and caches emotes from multiple sources
+- Handles PubSub events for raids, polls, predictions
+- Manages chat message buffer and overflow
+- Coordinates chat replay for VODs
+
+```kotlin
+@HiltViewModel
+class ChatViewModel @Inject constructor(
+    @ApplicationContext private val applicationContext: Context,
+    private val graphQLRepository: GraphQLRepository,
+    private val helixRepository: HelixRepository,
+    private val playerRepository: PlayerRepository,
+    private val trustManager: X509TrustManager?,
+    private val json: Json,
+) : ViewModel()
+```
+
+<Info>
+ViewModel manages multiple concurrent connections: chat read, chat write, PubSub, and 7TV EventAPI.
+</Info>
+
+### 2. ChatFragment
+
+**Location**: `ui/chat/ChatFragment.kt`
+
+**Role**: UI component for displaying and sending chat messages
+
+**Features**:
+- RecyclerView with custom adapter for message rendering
+- Auto-complete for emotes and usernames
+- Message interaction (reply, translate, user actions)
+- Emote picker with tabs (Recent, Twitch, Third-party)
+- Room state indicators (emote-only, slow mode, etc.)
+
+### 3. Chat Connections
+
+Multiple connection types for different purposes:
+
+#### ChatReadWebSocket
+
+**Location**: `util/chat/ChatReadWebSocket.kt`
+
+**Purpose**: Receive chat messages via Twitch WebSocket
+
+**Protocol**: `wss://irc-ws.chat.twitch.tv`
+
+#### ChatWriteWebSocket
+
+**Location**: `util/chat/ChatWriteWebSocket.kt`
+
+**Purpose**: Send chat messages (requires authentication)
+
+#### ChatReadIRC / ChatWriteIRC
+
+**Location**: `util/chat/ChatReadIRC.kt`, `util/chat/ChatWriteIRC.kt`
+
+**Purpose**: Legacy IRC connection option
+
+**Protocol**: `irc.chat.twitch.tv:6697` (SSL) or `:6667`
+
+<Note>
+WebSocket is the default and recommended connection method. IRC is kept for compatibility.
+</Note>
+
+### 4. PubSub Integration
+
+#### HermesWebSocket
+
+**Location**: `util/chat/HermesWebSocket.kt`
+
+**Purpose**: Subscribe to Twitch PubSub topics for events
+
+**Events**:
+- Channel points redemptions
+- Raids (incoming)
+- Polls (create, update, complete)
+- Predictions (create, update, resolve)
+- Stream info updates
+- Playback events (viewer count, live status)
+
+```kotlin
+val hermesWebSocket = HermesWebSocket(
+    channelId = channelId,
+    userId = accountId,
+    gqlClientId = gqlClientId,
+    gqlToken = gqlToken,
+    collectPoints = true,
+    showRaids = true,
+    showPolls = true,
+    showPredictions = true,
+    trustManager = trustManager,
+    listener = PubSubListener(...)
+)
+```
+
+### 5. Third-Party Integrations
+
+#### StvEventApiWebSocket
+
+**Location**: `util/chat/StvEventApiWebSocket.kt`
+
+**Purpose**: Real-time 7TV emote updates and cosmetics
+
+**Features**:
+- Live emote additions/removals
+- Name paints (colored usernames)
+- Custom badges
+- Personal emote sets
+
+## Chat Message Flow
+
+### Live Chat
+
+```
+Twitch WebSocket
+      ↓
+[ChatReadWebSocket receives IRC message]
+      ↓
+ChatReadListener.onChatMessage()
+      ↓
+ChatUtils.parseChatMessage()
+      ↓
+ChatMessage object created
+      ↓
+ChatViewModel.onMessage()
+      ↓
+chatMessages buffer (max 600)
+      ↓
+newMessage SharedFlow emits
+      ↓
+ChatFragment observes
+      ↓
+Adapter.notifyItemInserted()
+      ↓
+RecyclerView displays message
+```
+
+### Chat Replay
+
+<Accordion title="Chat Replay Architecture">
+
+#### ChatReplayManager
+
+**Location**: `ui/chat/ChatReplayManager.kt`
+
+**Purpose**: Synchronize VOD chat with video playback
+
+**Key Features**:
+- Loads chat messages from GraphQL API
+- Maintains message buffer with cursor-based pagination
+- Synchronizes with video position and playback speed
+- Handles seek operations (reload messages when jumping)
+
+```kotlin
+class ChatReplayManager(
+    private val videoId: String,
+    private val startTime: Long,
+    private val getCurrentPosition: () -> Long?,
+    private val getCurrentSpeed: () -> Float?,
+    private val coroutineScope: CoroutineScope,
+    private val listener: Listener,
+) {
+    private var cursor: String?
+    private val list = mutableListOf<VideoChatMessage>()
+    
+    fun updatePosition(position: Long)
+    fun updateSpeed(speed: Float)
+}
+```
+
+**Synchronization Logic**:
+
+```kotlin
+while (isActive) {
+    val message = list.firstOrNull() ?: break
+    val messageOffset = message.offsetSeconds.times(1000)
+    val currentPosition = getCurrentPosition() ?: 0 + startTime
+    
+    while (currentPosition < messageOffset) {
+        // Calculate delay based on playback speed
+        delay(max((messageOffset - currentPosition) / playbackSpeed, 0))
+    }
+    
+    // Emit message at correct time
+    listener.onChatMessage(message.toChatMessage())
+    list.remove(message)
+}
+```
+
+</Accordion>
+
+## Emote System
+
+### Emote Sources
+
+1. **Twitch Emotes**
+   - Global emotes (available to all users)
+   - Subscriber emotes (channel-specific)
+   - User emotes (followed channels, Turbo, Prime)
+
+2. **7TV (SevenTV)**
+   - Global emote set
+   - Channel-specific emotes
+   - Personal emote sets
+   - Animated emotes (WebP support)
+
+3. **BTTV (BetterTTV)**
+   - Global emotes
+   - Channel emotes
+
+4. **FFZ (FrankerFaceZ)**
+   - Global emotes
+   - Channel emotes
+
+### Emote Loading Strategy
+
+**Optimization**: Cache global emotes to reduce API calls
+
+```kotlin
+private var savedGlobalStvEmotes: List<Emote>? = null
+private var savedGlobalBttvEmotes: List<Emote>? = null
+private var savedGlobalFfzEmotes: List<Emote>? = null
+
+val saved = savedGlobalStvEmotes
+if (!saved.isNullOrEmpty()) {
+    synchronized(thirdPartyEmotes) {
+        thirdPartyEmotes.addAll(saved)
+    }
+} else {
+    viewModelScope.launch {
+        val emotes = playerRepository.loadGlobalStvEmotes()
+        savedGlobalStvEmotes = emotes
+        synchronized(thirdPartyEmotes) {
+            thirdPartyEmotes.addAll(emotes)
+        }
+    }
+}
+```
+
+### Emote Resolution
+
+Chat messages are parsed to replace emote codes with renderable emotes:
+
+1. **Twitch Emotes**: Included in IRC tags with positions
+2. **Third-Party Emotes**: Text matching against loaded emote names
+3. **Zero-Width Emotes**: Overlay emotes that render on top of others
+
+## Message Buffer Management
+
+**Buffer Limit**: Configurable (default 600 messages)
+
+**Overflow Handling**:
+
+```kotlin
+suspend fun onMessage(message: ChatMessage) {
+    synchronized(chatMessages) {
+        chatMessages.add(message)
+        val removeCount = if (chatMessages.size > messageLimit) {
+            chatMessages.size - messageLimit
+        } else 0
+        
+        if (removeCount > 0) {
+            repeat(removeCount) {
+                chatMessages.removeAt(0)  // Remove oldest
+            }
+        }
+    }
+}
+```
+
+<Info>
+Old messages are removed from the top of the list to maintain buffer size. RecyclerView is notified to remove items efficiently.
+</Info>
+
+## Event Handling
+
+### Raids
+
+**Display**: Banner with raider info, viewer count, profile image
+
+**Actions**:
+- Click to navigate to raided channel
+- Auto-switch option (configurable)
+- Close/dismiss banner
+
+```kotlin
+viewLifecycleOwner.lifecycleScope.launch {
+    viewModel.raid.collectLatest { raid ->
+        if (raid != null && !viewModel.raidClosed) {
+            raidLayout.visibility = View.VISIBLE
+            raidText.text = getString(R.string.raid_text, raid.targetName, raid.viewerCount)
+            // Load profile image, set click listeners
+        }
+    }
+}
+```
+
+### Polls
+
+**Display**: Live updating poll card with choices and vote counts
+
+**States**:
+- `ACTIVE`: Show timer, accept votes
+- `COMPLETED`/`TERMINATED`: Show results, highlight winner
+
+**Auto-hide**: Polls auto-dismiss after completion + timeout
+
+### Predictions
+
+**Display**: Prediction card with outcomes and point totals
+
+**States**:
+- `ACTIVE`: Show timer, display odds
+- `LOCKED`: Voting closed, awaiting resolution
+- `RESOLVED`: Show winning outcome
+- `CANCELED`: Show refund notice
+
+## Message Features
+
+### 1. Replies
+
+Nested message display with parent message context:
+
+```kotlin
+if (chatMessage.reply?.message != null) {
+    onMessage(ChatMessage(
+        reply = chatMessage.reply,
+        isReply = true,
+        replyParent = chatMessage,
+    ))
+}
+onMessage(chatMessage)  // Then the main message
+```
+
+### 2. Translation
+
+**Integration**: Google ML Kit Translate
+
+**Features**:
+- Per-message translation
+- "Translate All" mode for specific users
+- Language auto-detection
+- Downloadable language models
+
+### 3. Message Actions
+
+**On Message Click**:
+- View user profile
+- Reply to message
+- Translate message
+- Copy message text
+- Report user (if logged in)
+- Timeout/ban user (if moderator)
+
+## Auto-Complete System
+
+**Supported Completions**:
+- Emote names (all sources)
+- Usernames (chatters in current session)
+- Commands (if moderator)
+
+**Implementation**:
+
+```kotlin
+autoCompleteAdapter = AutoCompleteAdapter(
+    requireContext(),
+    R.layout.auto_complete_emotes_list_item,
+    R.id.name,
+    viewModel.autoCompleteList,  // Mutable list of emotes + chatters
+)
+editText.setAdapter(autoCompleteAdapter)
+editText.setTokenizer(SpaceTokenizer())  // Complete after spaces
+```
+
+## Connection Lifecycle
+
+### Start Live Chat
+
+```kotlin
+fun startLive(channelId: String?, channelLogin: String?, streamId: String?) {
+    messageLimit = prefs.getInt(C.CHAT_LIMIT, 600)
+    this.streamId = streamId
+    
+    // Establish connections
+    startLiveChat(channelId, channelLogin)
+    
+    // Load emotes
+    loadEmotes(channelId, channelLogin)
+    
+    // Load recent messages
+    if (prefs.getBoolean(C.CHAT_RECENT, true)) {
+        loadRecentMessages(channelLogin)
+    }
+    
+    // Load user emotes if logged in
+    if (isLoggedIn) {
+        loadUserEmotes(channelId)
+    }
+}
+```
+
+### Disconnect
+
+```kotlin
+fun disconnect() {
+    stopLiveChat()
+    chatMessages.clear()
+    autoReconnect = false
+    onMessage(ChatMessage(systemMsg = "Disconnected"))
+}
+```
+
+### Auto-Reconnect
+
+**Trigger**: App resumes from background
+
+```kotlin
+fun resumeLive(channelId: String?, channelLogin: String?) {
+    if (chatReadJob?.isActive == false && autoReconnect) {
+        startLiveChat(channelId, channelLogin)
+    }
+}
+```
+
+## Performance Optimizations
+
+### 1. Concurrent Hash Map for Chatters
+
+```kotlin
+private val chatters = ConcurrentHashMap<String, Chatter>()
+```
+
+**Benefits**: Thread-safe access without explicit synchronization overhead
+
+### 2. Synchronized Collections
+
+Critical shared state is protected:
+
+```kotlin
+synchronized(chatMessages) {
+    chatMessages.add(message)
+    // ...
+}
+```
+
+### 3. Lazy Emote Loading
+
+```kotlin
+val recentEmotes by lazy { playerRepository.loadRecentEmotesFlow() }
+```
+
+### 4. RecyclerView Optimization
+
+- `itemAnimator = null` - Disable default animations for performance
+- `stackFromEnd = true` - Start from bottom (chat convention)
+- Efficient notify methods (`notifyItemInserted`, `notifyItemRangeRemoved`)
+
+## Testing Considerations
+
+**Challenges**:
+- Real-time WebSocket connections
+- Multiple concurrent coroutines
+- IRC protocol parsing
+- Emote rendering
+
+**Current Approach**: Manual integration testing
+
+**Future Improvements**:
+- Mock WebSocket for unit tests
+- Snapshot tests for message rendering
+- Emote parser unit tests
+
+## Configuration
+
+**User Preferences** (`util/C.kt` constants):
+
+- `CHAT_LIMIT`: Message buffer size (default 600)
+- `CHAT_RECENT`: Load recent messages on join
+- `CHAT_USE_WEBSOCKET`: WebSocket vs IRC
+- `CHAT_ENABLE_STV/BTTV/FFZ`: Third-party emote toggles
+- `CHAT_TIMESTAMPS`: Show message timestamps
+- `CHAT_PUBSUB_ENABLED`: Enable PubSub events
+- `CHAT_RAIDS_AUTO_SWITCH`: Auto-switch on raid
+
+## Related Files
+
+- `ui/chat/ChatViewModel.kt` - Main ViewModel (1000+ lines)
+- `ui/chat/ChatFragment.kt` - UI component (800+ lines)
+- `ui/chat/ChatReplayManager.kt:201` - VOD chat replay
+- `ui/chat/ChatAdapter.kt` - Message rendering
+- `util/chat/ChatReadWebSocket.kt` - WebSocket connection
+- `util/chat/ChatUtils.kt` - IRC message parsing
+- `util/chat/PubSubUtils.kt` - PubSub event parsing
+- `util/chat/EventSubWebSocket.kt` - EventSub alternative protocol

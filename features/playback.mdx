@@ -1,0 +1,395 @@
+---
+title: Playback Features
+description: Advanced video playback controls including quality selection, speed adjustment, and audio options
+---
+
+ThystTV offers comprehensive playback features for live streams, VODs, and clips, giving you full control over your viewing experience.
+
+## Quality Selection
+
+Choose the video quality that best matches your network conditions and preferences.
+
+### Available Qualities
+
+ThystTV supports all Twitch quality options:
+
+- **Source**: Original broadcast quality (highest bitrate)
+- **1080p60**: 1080p resolution at 60 FPS  
+- **1080p**: 1080p resolution at 30 FPS
+- **720p60**: 720p resolution at 60 FPS
+- **720p**: 720p resolution at 30 FPS  
+- **480p**: Standard definition
+- **360p**: Lower quality for slower connections
+- **160p**: Minimum quality
+- **Audio Only**: No video, audio stream only
+
+<Note>
+Available qualities depend on what the streamer is broadcasting. Not all streams will have every quality option.
+</Note>
+
+### Changing Quality
+
+<Steps>
+  <Step title="Open player controls">
+    Tap the video once to show player controls.
+  </Step>
+  
+  <Step title="Tap quality button">
+    Tap the **Quality** button (gear icon or quality label).
+  </Step>
+  
+  <Step title="Select quality">
+    Choose your preferred quality from the list. The current quality is highlighted.
+  </Step>
+</Steps>
+
+The video will briefly pause and resume at the new quality.
+
+### Auto Quality Selection
+
+ThystTV can automatically select the best quality based on your settings:
+
+**Default Quality Priority**:
+1. Checks your **preferred quality** setting (if configured)
+2. Falls back to **Source** if preferred quality unavailable  
+3. Selects highest available quality if Source unavailable
+
+Configure default quality in **Settings** > **Player** > **Default Quality**.
+
+### Quality Indicators
+
+The current quality is displayed:
+- On the quality button in player controls
+- In the player settings menu
+- During quality transitions
+
+<Tip>
+For streams with fast action or detailed graphics, higher framerates (60 FPS) provide smoother playback. For slower content, 30 FPS qualities use less bandwidth.
+</Tip>
+
+## Playback Speed
+
+Adjust video playback speed for VODs and clips (not available for live streams).
+
+### Available Speeds
+
+ThystTV supports a wide range of playback speeds:
+
+- **0.25x** to **4.0x**: Fine-grained control
+- **Common presets**: 0.5x, 0.75x, 1.0x (normal), 1.25x, 1.5x, 2.0x
+- **Custom speeds**: Use the slider for any speed in the range
+
+### Changing Speed
+
+#### Method 1: Speed Dialog
+
+<Steps>
+  <Step title="Open player controls">
+    Tap the video once to show controls.
+  </Step>
+  
+  <Step title="Tap speed button">
+    Tap the **Speed** button (shows current speed, e.g., "1.0x").
+  </Step>
+  
+  <Step title="Adjust speed">
+    - Tap a **speed chip** for preset speeds, or
+    - Use the **slider** for precise control
+    - Tap **-0.05** or **+0.05** buttons for fine adjustments
+  </Step>
+</Steps>
+
+#### Method 2: Gesture Control
+
+Swipe horizontally in the bottom zone of the screen (see [Gesture Controls](/features/gesture-controls) for details).
+
+### Speed Display
+
+- Speed is shown on the speed button (e.g., "1.50x")  
+- "1.0x" may include "(Normal)" label
+- Changes apply immediately without buffering
+
+### Use Cases
+
+<Accordion title="Slow Motion (0.25x - 0.75x)">
+  Perfect for:
+  - Analyzing gameplay frame-by-frame
+  - Catching details in fast-paced content  
+  - Learning techniques from skilled players
+  - Enjoying cinematic moments
+</Accordion>
+
+<Accordion title="Normal Speed (1.0x)">
+  The default playback speed, matching the original content timing.
+</Accordion>
+
+<Accordion title="Fast Playback (1.25x - 2.0x)">
+  Ideal for:
+  - Watching VODs of long streams
+  - Speeding through slower segments  
+  - Consuming more content in less time
+  - Reviewing streams you've already seen
+</Accordion>
+
+<Accordion title="Very Fast (2.0x - 4.0x)">
+  Useful for:
+  - Quick VOD previews
+  - Finding specific moments in long videos
+  - Power users comfortable with rapid playback
+</Accordion>
+
+<Note>
+Playback speed is only available for VODs and clips. Live streams always play at 1.0x.
+</Note>
+
+## Audio Only Mode
+
+Listen to streams without video, saving bandwidth and battery.
+
+### Enabling Audio Only
+
+<Steps>
+  <Step title="Open player controls">
+    Tap the video once to show controls.
+  </Step>
+  
+  <Step title="Select Audio Only">
+    Either:
+    - Tap the **Audio Only** button (speaker icon), or
+    - Open **Quality** menu and select **Audio Only**
+  </Step>
+</Steps>
+
+The video area shows an audio-only indicator while the stream continues playing.
+
+### Benefits
+
+- **Reduced bandwidth**: Uses ~128 kbps instead of several Mbps
+- **Battery savings**: No video decoding or screen updates  
+- **Background listening**: Great for music streams or podcasts
+- **Mobile data friendly**: Significantly lower data usage
+
+### Returning to Video
+
+Tap the **Audio Only** button again or select any video quality from the quality menu.
+
+<Tip>
+Audio Only mode is perfect for:
+- Music & DJ streams
+- Podcasts and talk shows  
+- Keeping a stream running while multitasking
+- Conserving mobile data
+</Tip>
+
+## Volume Control
+
+### Methods
+
+1. **Hardware buttons**: Use device volume buttons (standard Android behavior)
+2. **Volume dialog**: Tap volume button in player controls for fine control  
+3. **Gesture control**: Swipe up/down on right half of screen (landscape mode)
+
+### Volume Dialog
+
+The volume dialog provides:
+- **Slider**: Precise volume adjustment (0-100%)
+- **Mute button**: Instant mute/unmute toggle  
+- **Current level**: Percentage display
+
+### Audio Compressor (Android 9+)
+
+The audio compressor reduces volume differences for more consistent listening:
+
+- **Enabled**: Loud moments are quieter, quiet moments are louder  
+- **Disabled**: Original dynamic range preserved
+
+To toggle:
+
+1. Open player controls
+2. Tap the **Audio Compressor** button (waveform icon)
+3. Icon changes to indicate on/off state
+
+Configure default in **Settings** > **Player** > **Audio Compressor**.
+
+<Note>
+Audio compressor requires Android 9 (API 28) or higher. The button is hidden on older Android versions.
+</Note>
+
+## Video Resize Modes
+
+Adjust how the video fits your screen in landscape mode.
+
+### Available Modes
+
+Cycle through resize modes by tapping the **Aspect Ratio** button:
+
+1. **Fit**: Entire video visible, may have black bars (default)
+2. **Fill**: Video fills screen, may crop edges  
+3. **Zoom**: Zooms in slightly, moderate cropping
+4. **Fixed Height**: Maintains video height, adjusts width
+5. **Fixed Width**: Maintains video width, adjusts height
+
+### When to Use Each Mode
+
+<Accordion title="Fit (Default)">
+  Best for most content. Shows the complete video frame without cropping, adding letterboxing if the video aspect ratio doesn't match your screen.
+</Accordion>
+
+<Accordion title="Fill">
+  Eliminates black bars by filling the entire screen. Use when you don't mind losing content at the edges, such as for gameplay streams where UI elements are in the center.
+</Accordion>
+
+<Accordion title="Zoom">
+  A compromise between Fit and Fill. Provides some cropping to reduce black bars while keeping most content visible.
+</Accordion>
+
+<Accordion title="Fixed Height / Fixed Width">
+  Advanced modes for specific aspect ratio needs. Useful for unusual video dimensions or custom display setups.
+</Accordion>
+
+Your resize mode preference is saved per orientation (portrait vs. landscape).
+
+## Subtitles / Closed Captions
+
+View subtitles when available on VODs and clips.
+
+### Enabling Subtitles
+
+<Steps>
+  <Step title="Open player menu">
+    Tap the **Menu** button (three dots) in player controls.
+  </Step>
+  
+  <Step title="Toggle subtitles">
+    If subtitles are available, you'll see either:
+    - **Show Subtitles** (when off)
+    - **Hide Subtitles** (when on)
+  </Step>
+  
+  <Step title="Select language">
+    If multiple subtitle tracks exist, choose your preferred language.
+  </Step>
+</Steps>
+
+### Subtitle Settings
+
+Customize subtitle appearance in Android system settings:
+
+1. Go to device **Settings** > **Accessibility** > **Caption preferences**
+2. Adjust text size, font, colors, and background
+3. Changes apply to all apps including ThystTV
+
+<Note>
+Subtitles are only available if the content creator has uploaded caption files. Most live streams do not have subtitles.
+</Note>
+
+## Advanced Playback Options
+
+### Seek Controls
+
+Navigate through VODs and clips:
+
+- **Progress bar**: Drag the scrubber to jump to any point  
+- **Rewind button**: Skip backward (default: 10 seconds)
+- **Fast forward button**: Skip forward (default: 10 seconds)
+- **Gesture seeking**: Swipe horizontally in top zone (landscape)
+
+Configure skip duration in **Settings** > **Player** > **Rewind/Forward Duration**.
+
+### Live Stream Features
+
+#### Seek to Live
+
+If you've paused or rewound a live stream:
+
+1. Tap the **Seek Live** button (appears when not at live point)
+2. Stream jumps to current live broadcast  
+3. Minimizes latency
+
+#### Restart Stream
+
+Reload the stream connection:
+
+1. Tap the **Restart** button in player controls
+2. Stream reconnects from the current point  
+3. Useful for resolving playback issues
+
+### Picture-in-Picture (PiP)
+
+Continue watching while using other apps:
+
+1. While playing, press the **Home** button or switch apps  
+2. Video shrinks to a floating window
+3. Drag the window to reposition it
+4. Tap the window to return to full player
+
+Configure PiP behavior in **Settings** > **Player** > **Picture-in-Picture**.
+
+<Note>
+Picture-in-Picture requires Android 8.0 (Oreo) or higher and must be enabled in Android settings.
+</Note>
+
+## Sleep Timer
+
+Automatically stop playback after a set duration.
+
+### Setting Sleep Timer
+
+<Steps>
+  <Step title="Open sleep timer">
+    Tap the **Sleep Timer** button in player controls (clock icon).
+  </Step>
+  
+  <Step title="Choose duration">
+    Select a preset time (15, 30, 60 minutes) or use the time picker for custom duration.
+  </Step>
+  
+  <Step title="Confirm">
+    Timer starts counting down. Playback stops when time expires.
+  </Step>
+</Steps>
+
+### Canceling Sleep Timer
+
+Open the sleep timer dialog and tap **Stop** or **Cancel**.
+
+### Lock Screen (Optional)
+
+Enable **Lock on Sleep** in settings to lock your device when the sleep timer expires.
+
+<Tip>
+Perfect for falling asleep to streams. Set a 30-60 minute timer so the stream stops automatically.
+</Tip>
+
+## Troubleshooting
+
+<Accordion title="Video keeps buffering">
+  Try these steps:
+  1. Switch to a lower quality (720p or 480p)
+  2. Check your internet connection speed
+  3. Close other apps using bandwidth
+  4. Use Audio Only mode if video isn't important
+  5. Restart the stream
+</Accordion>
+
+<Accordion title="Playback speed isn't available">
+  Playback speed only works for VODs and clips, not live streams. Verify you're watching recorded content.
+</Accordion>
+
+<Accordion title="Quality changes automatically">
+  If you have adaptive quality enabled, ThystTV may automatically adjust based on network conditions. Disable this in Settings > Player > Adaptive Quality.
+</Accordion>
+
+<Accordion title="Audio and video out of sync">
+  1. Pause and resume playback
+  2. Change quality to a different option, then back
+  3. Restart the stream
+  4. Check if the issue occurs with other players (may be source issue)
+</Accordion>
+
+<Accordion title="No audio in Audio Only mode">
+  - Ensure device volume is not muted
+  - Check that media volume (not ringtone) is turned up
+  - Verify the stream has audio (some categories are silent)
+  - Try switching to video mode and back
+</Accordion>

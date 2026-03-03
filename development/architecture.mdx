@@ -1,0 +1,404 @@
+---
+title: Architecture Overview
+description: High-level overview of ThystTV's architecture and design patterns
+---
+
+## Technology Stack
+
+ThystTV is built using modern Android development practices and libraries:
+
+<CardGroup cols={2}>
+  <Card title="Kotlin" icon="k">
+    100% Kotlin codebase with coroutines for asynchronous operations
+  </Card>
+  <Card title="Jetpack Libraries" icon="android">
+    Navigation, ViewModel, Room, Paging, WorkManager, and more
+  </Card>
+  <Card title="Hilt" icon="syringe">
+    Dependency injection for clean architecture
+  </Card>
+  <Card title="Room" icon="database">
+    Local database for offline data and caching
+  </Card>
+</CardGroup>
+
+## Project Structure
+
+The app follows a clean architecture pattern with clear separation of concerns:
+
+```
+com.github.andreyasadchy.xtra/
+├── db/                    # Room database and DAOs
+├── di/                    # Hilt dependency injection modules
+├── model/                 # Data models and entities
+│   ├── chat/             # Chat-related models
+│   ├── gql/              # GraphQL models
+│   ├── helix/            # Twitch Helix API models
+│   ├── stats/            # Screen time and statistics models
+│   └── ui/               # UI-specific models
+├── player/               # Media player components
+├── repository/           # Data repositories
+│   └── datasource/       # Remote and local data sources
+├── ui/                   # UI layer (Fragments, Activities, ViewModels)
+│   ├── channel/          # Channel browsing
+│   ├── chat/             # Chat and floating chat overlay
+│   ├── player/           # Video player and gesture controls
+│   ├── stats/            # Screen time statistics
+│   ├── settings/         # App settings
+│   └── ...
+└── util/                 # Utility classes and helpers
+```
+
+## Core Architecture Layers
+
+### 1. Data Layer
+
+#### Room Database
+
+The app uses Room for local persistence with 19+ specialized DAOs:
+
+<CodeGroup>
+```kotlin Key DAOs
+// Screen time tracking
+ScreenTimeDao
+WatchSessionDao
+WatchStreakDao
+StreamWatchStatsDao
+
+// User data
+BookmarksDao
+VideoPositionsDao
+VideosDao
+
+// Following and favorites
+LocalFollowsChannelDao
+LocalFollowsGameDao
+
+// Search and filters
+RecentSearchDao
+SavedFiltersDao
+```
+</CodeGroup>
+
+<Note>
+  Room schema location is configured at `app/build.gradle.kts:157`. Database migrations are handled in `db/AppDatabase.kt`
+</Note>
+
+#### Repositories
+
+Repositories abstract data sources and provide a clean API for ViewModels. They handle:
+- Remote API calls (Twitch Helix API, GraphQL)
+- Local database operations
+- Data caching and synchronization
+- Paging support for lists
+
+### 2. Dependency Injection
+
+Hilt is used throughout the app for dependency injection:
+
+<CodeGroup>
+```kotlin Module Files
+// di/DatabaseModule.kt - Provides Room database and DAOs
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule
+
+// di/ThystTVModule.kt - Provides network clients, repositories
+@Module
+@InstallIn(SingletonComponent::class)
+object ThystTVModule
+```
+</CodeGroup>
+
+### 3. UI Layer
+
+The UI follows the MVVM (Model-View-ViewModel) pattern:
+
+- **Fragments**: Display UI and handle user interactions
+- **ViewModels**: Manage UI state and business logic
+- **ViewBinding**: Type-safe view references
+- **Navigation Component**: Fragment navigation with Safe Args
+
+<Note>
+  ViewBinding is enabled at `app/build.gradle.kts:65`. Navigation Safe Args plugin is applied at `app/build.gradle.kts:8`
+</Note>
+
+## Key Features Architecture
+
+### Gesture System
+
+The gesture control system is a sophisticated state machine for video player interactions:
+
+<Steps>
+  <Step title="PlayerGestureListener">
+    Central state machine extending `GestureDetector.SimpleOnGestureListener`
+    
+    - Detects gesture types based on screen zones
+    - Manages gesture lifecycle (Down → Scroll → Up/Cancel)
+    - Prevents conflicts with other touch handlers
+  </Step>
+
+  <Step title="PlayerGestureHelper">
+    Stateless helper class for calculations:
+    
+    - Volume/brightness value calculations
+    - Time duration formatting
+    - Zone boundary detection
+    - Swipe direction determination
+  </Step>
+
+  <Step title="PlayerGestureCallback">
+    Interface for player control:
+    
+    - Seek, playback speed control
+    - Controller visibility
+    - Window attributes (brightness)
+    - Visual feedback overlay
+  </Step>
+</Steps>
+
+<Note>
+  Detailed gesture system documentation is available at `source/docs/GESTURE_SYSTEM.md`
+</Note>
+
+### Screen Time Tracking
+
+Screen time statistics use a multi-DAO approach:
+
+```kotlin
+WatchSessionDao       // Individual viewing sessions
+ScreenTimeDao         // Aggregated daily screen time
+StreamWatchStatsDao   // Per-channel statistics
+WatchStreakDao        // Viewing streaks
+```
+
+Data is:
+- Stored locally in Room database
+- Never shared externally (privacy-first)
+- Visualized with charts in the Stats tab
+
+### Floating Chat
+
+The floating chat overlay uses:
+- Custom ViewGroup for draggable, resizable overlay
+- WindowManager for system-level overlay
+- SharedPreferences for position/size persistence
+- High contrast mode for readability
+
+## Network Layer
+
+ThystTV communicates with Twitch using multiple protocols:
+
+<Tabs>
+  <Tab title="REST API">
+    **Twitch Helix API** via OkHttp + Cronet
+    
+    - Channel data, streams, videos
+    - User information
+    - Game categories
+    
+    Dependencies: `libs.okhttp`, `libs.cronet.api`
+  </Tab>
+  
+  <Tab title="GraphQL">
+    **Twitch GraphQL API** via Apollo
+    
+    - Advanced queries
+    - Subscriptions
+    - Real-time data
+    
+    Configuration: `app/build.gradle.kts:160-164`
+  </Tab>
+  
+  <Tab title="Chat (IRC)">
+    **Twitch Chat IRC** with custom implementation
+    
+    - Real-time chat messages
+    - Emotes and badges
+    - Chat commands
+  </Tab>
+</Tabs>
+
+## Media Playback
+
+Video playback is powered by **Media3 ExoPlayer**:
+
+```kotlin
+implementation(libs.media3.exoplayer)
+implementation(libs.media3.exoplayer.hls)  // HLS streaming
+implementation(libs.media3.ui)             // Player UI
+implementation(libs.media3.session)        // Background playback
+```
+
+Features:
+- HLS adaptive streaming
+- Picture-in-Picture (PiP)
+- Background audio playback
+- Playback speed control
+- Seek preview thumbnails
+
+## Image Loading
+
+ThystTV uses both Coil and Glide for image loading:
+
+<CodeGroup>
+```kotlin Coil
+// Modern, Kotlin-first image loading
+implementation(libs.coil)
+implementation(libs.coil.gif)
+implementation(libs.coil.okhttp)
+```
+
+```kotlin Glide
+// Legacy support and WebP decoding
+implementation(libs.glide)
+ksp(libs.glide.ksp)
+implementation(libs.glide.okhttp)
+implementation(libs.glide.webpdecoder)
+```
+</CodeGroup>
+
+## Build Configuration
+
+### Version Catalog
+
+Dependencies are managed using Gradle version catalogs:
+- `libs.plugins.*` - Gradle plugins
+- `libs.*` - Library dependencies
+
+### Plugins
+
+```kotlin
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)               // Kotlin Symbol Processing
+    alias(libs.plugins.hilt)              // Dependency Injection
+    alias(libs.plugins.navigation.safeargs)
+    alias(libs.plugins.apollo)            // GraphQL
+}
+```
+
+### Code Generation
+
+The app uses KSP for compile-time code generation:
+- **Room**: Database implementation and SQL validation
+- **Hilt**: Dependency injection
+- **Glide**: Image loader modules
+
+## Debug Tools
+
+### LeakCanary
+
+Memory leak detection in debug builds:
+
+```kotlin
+debugImplementation("com.squareup.leakcanary:leakcanary-android:2.14")
+```
+
+### Baseline Profiles
+
+Faster app startup using baseline profiles:
+
+```kotlin
+implementation("androidx.profileinstaller:profileinstaller:1.3.1")
+```
+
+## Testing Strategy
+
+The app includes unit tests for critical components:
+
+<CodeGroup>
+```kotlin Test Dependencies
+testImplementation("junit:junit:4.13.2")
+testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+testImplementation("androidx.arch.core:core-testing:2.2.0")
+```
+</CodeGroup>
+
+Test coverage includes:
+- Gesture logic (pure functions)
+- Repository layer
+- ViewModel state management
+- Coroutine flows
+
+<Note>
+  Integration tests for UI components with `MotionEvent` are currently verified via manual testing
+</Note>
+
+## Security & Privacy
+
+### EncryptedSharedPreferences
+
+Sensitive data is encrypted using AndroidX Security:
+
+```kotlin
+implementation(libs.security.crypto)
+```
+
+### TLS/SSL
+
+Network security with Conscrypt:
+
+```kotlin
+implementation(libs.conscrypt)
+```
+
+### Local-Only Data
+
+All user statistics and preferences are:
+- Stored locally in Room database
+- Never transmitted to external servers
+- Fully under user control
+
+## Performance Optimizations
+
+<AccordionGroup>
+  <Accordion title="ProGuard/R8">
+    Release builds use R8 for:
+    - Code shrinking
+    - Obfuscation
+    - Optimization
+    
+    Configured at `app/build.gradle.kts:52-54`
+  </Accordion>
+
+  <Accordion title="Resource Shrinking">
+    Unused resources are removed in release builds:
+    ```kotlin
+    isShrinkResources = true
+    ```
+  </Accordion>
+
+  <Accordion title="JNI Library Exclusion">
+    Unused translation JNI libraries are excluded to reduce APK size:
+    ```kotlin
+    packaging.jniLibs.excludes.addAll(listOf(
+        "lib/x86/libtranslate_jni.so",
+        "lib/x86_64/libtranslate_jni.so",
+        // ...
+    ))
+    ```
+  </Accordion>
+
+  <Accordion title="Paging 3">
+    Large lists use Paging 3 for efficient loading:
+    - Streams, videos, channels
+    - Search results
+    - Chat history
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Building" icon="hammer" href="/development/building">
+    Learn how to build the app from source
+  </Card>
+  <Card title="Contributing" icon="code-pull-request" href="/development/contributing">
+    Start contributing to ThystTV
+  </Card>
+</CardGroup>

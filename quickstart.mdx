@@ -1,80 +1,259 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick start
+description: Get started with ThystTV from installation to watching your first stream
 ---
 
-## Get started in three steps
+This guide will walk you through installing ThystTV and watching your first Twitch stream with all the enhanced features.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+Before you begin, make sure you have:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+- An Android device running Android 6.0 or higher
+- A Twitch account (optional, but recommended for following channels)
+- An internet connection
+
+## Installation
+
+<Steps>
+  <Step title="Download ThystTV">
+    Download the latest APK from the [GitHub Releases page](https://github.com/YOUR_USERNAME/ThystTV/releases/latest):
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    1. Tap the `ThystTV-{version}.apk` file to download
+    2. Wait for the download to complete
+  </Step>
+  
+  <Step title="Install the app">
+    1. Open the downloaded APK file
+    2. If prompted, enable "Install unknown apps" for your browser
+    3. Tap **Install**
+    4. Tap **Open** when installation completes
+  </Step>
+</Steps>
+
+<Tip>
+  See the [Installation guide](/installation) for detailed instructions and troubleshooting.
+</Tip>
+
+## First-time setup
+
+<Steps>
+  <Step title="Launch ThystTV">
+    Open ThystTV from your app drawer. You'll see the home screen with featured streams and top categories.
+  </Step>
+  
+  <Step title="Log in to Twitch (optional)">
+    To access your followed channels and enable chat features:
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    1. Tap the menu icon (☰) in the top-left corner
+    2. Tap **Sign in with Twitch**
+    3. Log in with your Twitch credentials
+    4. Authorize ThystTV to access your account
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    <Note>
+      You can browse and watch streams without logging in, but you won't be able to send chat messages or see your followed channels.
+    </Note>
+  </Step>
+  
+  <Step title="Browse streams">
+    Explore available content:
+    
+    - **Home tab**: Browse featured streams and top categories
+    - **Search**: Tap the search icon to find specific channels or games
+    - **Following tab**: See your followed channels (requires login)
+  </Step>
+</Steps>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+## Watch your first stream
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+<Steps>
+  <Step title="Select a stream">
+    Tap any live stream thumbnail to open the stream player. The stream will start playing automatically.
+  </Step>
+  
+  <Step title="Try gesture controls">
+    Control your viewing experience with gestures:
+    
+    **Volume control:**
+    - Swipe up/down on the **right side** of the screen to increase/decrease volume
+    
+    **Brightness control:**
+    - Swipe up/down on the **left side** of the screen to adjust brightness
+    
+    **For VODs (video on demand):**
+    - Swipe left/right on the **top half** to seek backward/forward
+    - Swipe left/right on the **bottom half** to adjust playback speed
+    
+    <Tip>
+      You'll see a visual slider overlay while adjusting. Gestures are disabled when player controls are visible to prevent accidental inputs.
+    </Tip>
+  </Step>
+  
+  <Step title="Enable floating chat">
+    Watch in full-screen while keeping up with chat:
+    
+    1. **Double-tap** anywhere on the screen to cycle chat modes:
+       - Overlay mode (chat floats on top)
+       - Side-by-side mode (split screen)
+       - Hidden (no chat visible)
+    
+    2. In overlay mode:
+       - **Drag** the chat window to reposition it
+       - **Pinch** to resize the chat window
+       - Tap the opacity icon to adjust transparency
+       - Tap the contrast icon for high contrast mode
+  </Step>
+  
+  <Step title="Check your watch statistics">
+    ThystTV automatically tracks your viewing time:
+    
+    1. Tap the **Stats** tab in the bottom navigation
+    2. View your daily viewing time
+    3. See your top watched channels
+    4. Explore category breakdowns with charts
+    
+    <Note>
+      All statistics are stored locally on your device and never shared or uploaded.
+    </Note>
+  </Step>
+</Steps>
 
-### Step 3: Go live
+## Customize your experience
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+### Gesture settings
+
+Adjust gesture behavior to your preference:
+
+1. Tap the menu icon (☰) → **Settings**
+2. Navigate to **Player** → **Gesture Controls**
+3. Customize:
+   - **Gesture sensitivity**: Adjust how much movement triggers actions
+   - **Zone boundaries**: Configure top/bottom and left/right split points
+   - **Haptic feedback**: Enable vibration feedback (disabled by default)
+
+### Chat appearance
+
+Customize the chat overlay:
+
+1. Open any stream with chat
+2. In overlay mode, use the chat controls:
+   - **Opacity slider**: Adjust chat transparency
+   - **High contrast toggle**: Improve readability over bright content
+   - **Font size**: Change in Settings → **Chat**
+
+### Player settings
+
+Optimize video playback:
+
+1. Go to Settings → **Player**
+2. Configure:
+   - **Default quality**: Auto, Source, 1080p60, 720p60, etc.
+   - **Low latency mode**: Reduce stream delay
+   - **Picture-in-picture**: Enable background playback
+
+## Common tasks
+
+### Follow a channel
+
+1. Open any stream or channel page
+2. Tap the heart icon to follow
+3. Access followed channels in the **Following** tab
+
+<Warning>
+  You must be logged in to follow channels.
+</Warning>
+
+### Watch a VOD
+
+1. Go to a channel page
+2. Tap the **Videos** tab
+3. Select a past broadcast or highlight
+4. Use seek gestures (swipe left/right on top half)
+5. Adjust playback speed (swipe left/right on bottom half)
+
+### Enable picture-in-picture
+
+1. Start playing a stream
+2. Tap the home button or switch apps
+3. The stream continues in a floating window
+4. Tap the window to return to full screen
+
+### Clear watch history
+
+1. Go to Settings → **Privacy**
+2. Tap **Clear watch statistics**
+3. Confirm the action
+
+<Warning>
+  This permanently deletes all locally stored viewing data. This action cannot be undone.
+</Warning>
+
+## Tips and tricks
+
+<CardGroup cols={2}>
+  <Card title="Quick chat switching" icon="bolt">
+    Double-tap the screen to instantly cycle between chat overlay, side-by-side, and hidden modes
+  </Card>
+  
+  <Card title="Edge protection" icon="shield">
+    Gestures automatically avoid system gesture zones on the edges to prevent navigation conflicts
+  </Card>
+  
+  <Card title="Visual feedback" icon="eye">
+    Watch for the slider overlays when using gestures - they show exactly what you're adjusting
+  </Card>
+  
+  <Card title="Debug builds" icon="bug">
+    Debug builds (package ID ending in `.debug`) can be installed alongside release builds for testing
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+### Stream won't load
+
+- Check your internet connection
+- Try lowering the quality in Settings → Player
+- Restart the app
+
+### Gestures not working
+
+- Ensure player controls are hidden (tap screen once to hide)
+- Check that gestures are enabled in Settings → Player
+- Adjust sensitivity settings if gestures are too sensitive or not sensitive enough
+
+### Chat overlay disappears
+
+- Double-tap to cycle chat modes back to overlay
+- Check that you're logged in for full chat functionality
+
+### Statistics not showing
+
+- Watch at least one stream for a few minutes to generate data
+- Stats update in real-time while watching
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
+Now that you're familiar with ThystTV, explore more:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card
+    title="Report issues"
+    icon="bug"
+    href="https://github.com/YOUR_USERNAME/ThystTV/issues"
+  >
+    Found a bug? Report it on GitHub
+  </Card>
+  
+  <Card
+    title="Contribute"
+    icon="code"
+    href="https://github.com/YOUR_USERNAME/ThystTV"
+  >
+    Help improve ThystTV by contributing code
+  </Card>
 </CardGroup>
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  ThystTV is experimental and actively developed. Features may change or improve over time based on user feedback.
 </Note>

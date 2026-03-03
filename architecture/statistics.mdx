@@ -1,0 +1,451 @@
+---
+title: Statistics Tracking Architecture
+description: Analytics and statistics tracking system architecture
+---
+
+ThystTV includes a comprehensive statistics tracking system that monitors user viewing habits, provides analytics, and tracks watch streaks.
+
+## System Overview
+
+The statistics system follows the MVVM pattern with Room database for persistence, coroutines for async operations, and StateFlow for reactive UI updates.
+
+## Architecture Components
+
+### 1. StatsViewModel
+
+**Location**: `ui/stats/StatsViewModel.kt`
+
+**Role**: Exposes statistics data to the UI through StateFlow
+
+```kotlin
+@HiltViewModel
+class StatsViewModel @Inject constructor(
+    private val repository: StatsRepository
+) : ViewModel() {
+    
+    val screenTime: StateFlow<List<ScreenTime>>
+    val topStreams: StateFlow<List<StreamWatchStats>>
+    val watchStreak: StateFlow<WatchStreak?>
+    val categoryBreakdown: StateFlow<List<CategoryWatchTime>>
+    val hourlyBreakdown: StateFlow<List<HourlyWatchTime>>
+    val monthlySummary: StateFlow<List<MonthlyWatchTime>>
+    val streamerLoyalty: StateFlow<List<StreamerLoyalty>>
+}
+```
+
+<Info>
+ViewModel uses `stateIn()` to convert cold Flow from Room DAOs into hot StateFlow for UI consumption.
+</Info>
+
+### 2. StatsRepository
+
+**Location**: `ui/stats/StatsRepository.kt`
+
+**Role**: Coordinates data operations across multiple DAOs
+
+**Key Methods**:
+
+```kotlin
+class StatsRepository @Inject constructor(
+    private val screenTimeDao: ScreenTimeDao,
+    private val streamWatchStatsDao: StreamWatchStatsDao,
+    private val watchSessionDao: WatchSessionDao,
+    private val watchStreakDao: WatchStreakDao
+) {
+    suspend fun updateScreenTime(date: String, secondsToAdd: Long)
+    suspend fun updateStreamWatchStats(channelId: String, channelName: String, secondsToAdd: Long)
+    suspend fun recordWatchSession(session: WatchSession)
+    suspend fun getCategoryBreakdown(startDate: String, endDate: String): List<CategoryWatchTime>
+    suspend fun getHourlyBreakdown(startDate: String, endDate: String): List<HourlyWatchTime>
+    suspend fun getMonthlySummary(limit: Int = 12): List<MonthlyWatchTime>
+    suspend fun getStreamerLoyalty(limit: Int = 20): List<StreamerLoyalty>
+}
+```
+
+### 3. StatsFragment
+
+**Location**: `ui/stats/StatsFragment.kt`
+
+**Role**: Displays statistics with charts and visualizations
+
+**Key Features**:
+- Daily bar chart for screen time
+- Category pie chart for game breakdown
+- Hourly heatmap for viewing patterns
+- Top streams list
+- Streamer loyalty rankings
+- Watch streak display
+
+```kotlin
+@AndroidEntryPoint
+class StatsFragment : Fragment(R.layout.fragment_stats) {
+    private val viewModel: StatsViewModel by viewModels()
+    
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { viewModel.screenTime.collectLatest { /* update UI */ } }
+                launch { viewModel.topStreams.collectLatest { /* update UI */ } }
+                launch { viewModel.watchStreak.collectLatest { /* update UI */ } }
+            }
+        }
+    }
+}
+```
+
+## Database Schema
+
+### Tables
+
+#### screen_time
+
+**Purpose**: Daily viewing time aggregation
+
+```sql
+CREATE TABLE screen_time (
+    date TEXT NOT NULL PRIMARY KEY,
+    totalSeconds INTEGER NOT NULL
+)
+```
+
+**Usage**: Track total viewing time per day for weekly/monthly charts
+
+#### stream_watch_stats
+
+**Purpose**: Per-channel watch statistics
+
+```sql
+CREATE TABLE stream_watch_stats (
+    channelId TEXT NOT NULL PRIMARY KEY,
+    channelName TEXT NOT NULL,
+    totalSecondsWatched INTEGER NOT NULL,
+    lastWatchedTimestamp INTEGER NOT NULL
+)
+```
+
+**Usage**: Top watched streams, channel-specific analytics
+
+#### watch_sessions
+
+**Purpose**: Detailed session tracking for enhanced analytics
+
+```sql
+CREATE TABLE watch_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    channelId TEXT,
+    channelName TEXT,
+    channelLogin TEXT,
+    gameId TEXT,
+    gameName TEXT,
+    startTime INTEGER NOT NULL,
+    endTime INTEGER NOT NULL,
+    durationSeconds INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    hourOfDay INTEGER NOT NULL
+)
+```
+
+**Indexes**:
+- `index_watch_sessions_channelId`
+- `index_watch_sessions_gameId`
+- `index_watch_sessions_startTime`
+- `index_watch_sessions_date`
+
+<Note>
+Indexes are critical for performance when querying large datasets for analytics.
+</Note>
+
+#### watch_streak
+
+**Purpose**: Track consecutive days of watching
+
+```sql
+CREATE TABLE watch_streak (
+    id INTEGER NOT NULL PRIMARY KEY,
+    currentStreakDays INTEGER NOT NULL,
+    longestStreakDays INTEGER NOT NULL,
+    lastWatchDate TEXT NOT NULL,
+    streakStartDate TEXT
+)
+```
+
+## Data Flow
+
+### Recording Statistics
+
+```
+Video Playback
+      ↓
+[Player tracks watch time]
+      ↓
+StatsRepository.updateScreenTime()
+      ↓
+ScreenTimeDao.insert()
+      ↓
+Room Database
+      ↓
+Flow emission
+      ↓
+StateFlow in ViewModel
+      ↓
+UI Update
+```
+
+### Session Recording
+
+<Accordion title="Session Recording Flow">
+
+1. **Session Start**: User begins watching a stream/video
+2. **Tracking**: App tracks channel ID, game, start time, etc.
+3. **Session End**: User stops watching or switches content
+4. **Recording**: Session data is persisted to `watch_sessions` table
+5. **Streak Update**: Repository checks if this is a consecutive day and updates streak
+
+```kotlin
+suspend fun recordWatchSession(session: WatchSession) {
+    watchSessionDao.insert(session)
+    updateWatchStreak(session.date)
+}
+
+private suspend fun updateWatchStreak(currentDate: String) {
+    val streak = watchStreakDao.getStreak()
+    if (streak == null) {
+        watchStreakDao.upsert(WatchStreak(1, 1, 1, currentDate, currentDate))
+    } else if (streak.lastWatchDate != currentDate) {
+        val isConsecutive = isConsecutiveDay(streak.lastWatchDate, currentDate)
+        val newCurrent = if (isConsecutive) streak.currentStreakDays + 1 else 1
+        val newLongest = maxOf(streak.longestStreakDays, newCurrent)
+        watchStreakDao.updateStreak(newCurrent, newLongest, currentDate, ...)
+    }
+}
+```
+
+</Accordion>
+
+## Analytics Features
+
+### 1. Screen Time Tracking
+
+**Daily Aggregation**: Total viewing time per day
+
+```kotlin
+suspend fun updateScreenTime(date: String, secondsToAdd: Long) {
+    val current = screenTimeDao.getScreenTime(date)
+    val newTime = (current?.totalSeconds ?: 0L) + secondsToAdd
+    screenTimeDao.insert(ScreenTime(date, newTime))
+}
+```
+
+**UI Display**: 7-day bar chart with daily average
+
+### 2. Category Breakdown
+
+**Purpose**: Show viewing time distribution across game categories
+
+**Query Period**: Last 30 days by default
+
+```kotlin
+suspend fun getCategoryBreakdown(startDate: String, endDate: String): List<CategoryWatchTime> {
+    return watchSessionDao.getCategoryBreakdown(startDate, endDate)
+}
+```
+
+**Visualization**: Pie chart with color-coded categories
+
+### 3. Hourly Heatmap
+
+**Purpose**: Identify viewing patterns by hour of day
+
+**Data Structure**:
+```kotlin
+data class HourlyWatchTime(
+    val hourOfDay: Int,      // 0-23
+    val totalSeconds: Long
+)
+```
+
+**Visualization**: 24-hour heatmap showing peak viewing times
+
+### 4. Streamer Loyalty
+
+**Purpose**: Rank streamers by engagement metrics
+
+**Loyalty Score Calculation**:
+
+```kotlin
+data class StreamerLoyalty(
+    val channelId: String,
+    val channelName: String,
+    val channelLogin: String,
+    val totalWatchSeconds: Long,
+    val sessionCount: Int,
+    val distinctDaysWatched: Int,
+    val loyaltyScore: Double
+) {
+    companion object {
+        fun calculateScore(
+            watchSeconds: Long,
+            sessions: Int,
+            days: Int,
+            maxWatchSeconds: Long,
+            maxSessionCount: Int,
+            maxDistinctDays: Int
+        ): Double {
+            // Weighted average of normalized metrics
+            val watchWeight = 0.4
+            val sessionWeight = 0.3
+            val daysWeight = 0.3
+            
+            return (watchSeconds.toDouble() / maxWatchSeconds * watchWeight) +
+                   (sessions.toDouble() / maxSessionCount * sessionWeight) +
+                   (days.toDouble() / maxDistinctDays * daysWeight)
+        }
+    }
+}
+```
+
+<Info>
+Loyalty score considers watch time (40%), session count (30%), and distinct days watched (30%).
+</Info>
+
+### 5. Watch Streak
+
+**Purpose**: Gamification - encourage daily viewing
+
+**Streak Logic**:
+- **Current Streak**: Consecutive days with at least one watch session
+- **Longest Streak**: All-time record
+- **Streak Break**: Missing a day resets current streak to 1
+
+```kotlin
+private fun isConsecutiveDay(lastDate: String, currentDate: String): Boolean {
+    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    val last = sdf.parse(lastDate) ?: return false
+    val current = sdf.parse(currentDate) ?: return false
+    val diffMs = current.time - last.time
+    val diffDays = diffMs / (1000 * 60 * 60 * 24)
+    return diffDays == 1L
+}
+```
+
+## UI Components
+
+### Custom Views
+
+**DailyBarChartView**: Weekly screen time bar chart
+
+```kotlin
+data class DayData(
+    val label: String,      // "Mon", "Tue", "Today", etc.
+    val seconds: Long       // Total watch time
+)
+```
+
+**CategoryPieChart**: Game category distribution
+
+**HourlyHeatmap**: 24-hour viewing pattern visualization
+
+### Adapters
+
+- `StreamStatsAdapter`: Top watched streams RecyclerView
+- `CategoryLegendAdapter`: Pie chart legend
+- `StreamerLoyaltyAdapter`: Loyalty rankings list
+
+## Data Retention
+
+The system stores:
+- **All-time data** for watch sessions
+- **Daily aggregates** for screen time
+- **Channel-level** cumulative statistics
+- **Monthly summaries** (last 12 months)
+
+<Note>
+No automatic data cleanup is implemented - users have full history access.
+</Note>
+
+## Performance Optimizations
+
+### 1. Database Indexing
+
+Strategic indexes on frequently queried columns:
+
+```sql
+CREATE INDEX index_watch_sessions_date ON watch_sessions (date)
+CREATE INDEX index_watch_sessions_channelId ON watch_sessions (channelId)
+CREATE INDEX index_watch_sessions_gameId ON watch_sessions (gameId)
+```
+
+### 2. Flow Conversion
+
+Convert cold Flow to hot StateFlow with replay:
+
+```kotlin
+val screenTime: StateFlow<List<ScreenTime>> = repository.getAllScreenTime()
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+```
+
+**Benefits**:
+- 5-second timeout prevents unnecessary database queries
+- Multiple observers share the same Flow
+- Automatic lifecycle handling
+
+### 3. Batch Operations
+
+Update multiple statistics atomically:
+
+```kotlin
+suspend fun recordWatchSession(session: WatchSession) {
+    watchSessionDao.insert(session)
+    updateWatchStreak(session.date)
+    // Both operations in same transaction context
+}
+```
+
+## Date Formatting
+
+Consistent date format across the system:
+
+```kotlin
+private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+```
+
+**Benefits**:
+- Sortable string format
+- Database-friendly
+- Locale-independent
+
+## Extension Points
+
+The architecture supports easy addition of new analytics:
+
+<Steps>
+  <Step title="Define Data Model">
+    Create a new data class or Room entity for your metric.
+  </Step>
+  
+  <Step title="Add DAO Query">
+    Add query methods to appropriate DAO for data retrieval.
+  </Step>
+  
+  <Step title="Update Repository">
+    Add repository methods to expose the new data.
+  </Step>
+  
+  <Step title="Expose in ViewModel">
+    Create StateFlow in ViewModel for UI observation.
+  </Step>
+  
+  <Step title="Update UI">
+    Add UI components in Fragment to display the data.
+  </Step>
+</Steps>
+
+## Related Files
+
+- `ui/stats/StatsViewModel.kt:78` - ViewModel implementation
+- `ui/stats/StatsRepository.kt:127` - Repository with business logic
+- `ui/stats/StatsFragment.kt:186` - UI component
+- `db/ScreenTimeDao.kt` - Daily screen time DAO
+- `db/StreamWatchStatsDao.kt` - Channel statistics DAO
+- `db/WatchSessionDao.kt` - Session tracking DAO
+- `db/WatchStreakDao.kt` - Streak tracking DAO

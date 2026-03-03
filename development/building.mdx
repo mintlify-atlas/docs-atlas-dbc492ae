@@ -1,0 +1,205 @@
+---
+title: Building from Source
+description: Instructions for building ThystTV from source code
+---
+
+## Prerequisites
+
+Before building ThystTV, ensure you have the following installed:
+
+<Steps>
+  <Step title="Java Development Kit (JDK)">
+    Install JDK 21 or higher. ThystTV uses JVM toolchain version 21.
+    
+    ```bash
+    # Verify your Java version
+    java -version
+    ```
+    
+    <Note>
+      The project is configured to use JVM toolchain 21 in `app/build.gradle.kts:13`
+    </Note>
+  </Step>
+
+  <Step title="Android SDK">
+    Install Android SDK with the following components:
+    - **Compile SDK**: API 36
+    - **Min SDK**: API 23 (Android 6.0)
+    - **Target SDK**: API 36
+    - **Build Tools**: Latest version
+    
+    <Note>
+      You can install Android SDK through [Android Studio](https://developer.android.com/studio) or via command-line tools.
+    </Note>
+  </Step>
+
+  <Step title="Git">
+    Install Git to clone the repository:
+    
+    ```bash
+    git clone https://github.com/your-repo/ThystTV.git
+    cd ThystTV
+    ```
+  </Step>
+</Steps>
+
+## Build Commands
+
+### Debug Build
+
+The debug build includes debugging symbols and is signed with a debug keystore. It also appends `.debug` to the application ID and `-DEBUG` to the version name.
+
+```bash
+./gradlew assembleDebug
+```
+
+The APK will be generated at:
+```
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+<Note>
+  Debug builds use the debug keystore located at `app/debug-keystore.jks` with predefined credentials.
+</Note>
+
+### Release Build
+
+Release builds are optimized with ProGuard and resource shrinking enabled.
+
+<CodeGroup>
+```bash Development (unsigned)
+./gradlew assembleRelease
+```
+
+```bash Production (signed)
+# Set keystore credentials as environment variables
+export KEYSTORE_PASSWORD=your_keystore_password
+export KEY_ALIAS=release
+export KEY_PASSWORD=your_key_password
+
+./gradlew assembleRelease
+```
+</CodeGroup>
+
+The APK will be generated at:
+```
+app/build/outputs/apk/release/app-release.apk
+```
+
+<Warning>
+  If `KEYSTORE_PASSWORD` is not set, the release build will fall back to using the debug keystore. For production releases, always provide proper signing credentials.
+</Warning>
+
+### Running Tests
+
+Execute the unit test suite:
+
+```bash
+./gradlew test
+```
+
+Tests include:
+- Unit tests for gesture logic (`PlayerGestureHelperTest`)
+- Repository and data layer tests
+- ViewModel tests with coroutines
+
+<Note>
+  Test dependencies include JUnit, Mockito, and Kotlin Coroutines Test. See `app/build.gradle.kts:148-154`
+</Note>
+
+## Build Variants
+
+ThystTV has two build types:
+
+| Build Type | Application ID | Minify | Shrink Resources | Signing |
+|------------|----------------|--------|------------------|----------|
+| **Debug** | `com.tzii.thysttv.debug` | No | No | Debug keystore |
+| **Release** | `com.tzii.thysttv` | Yes | Yes | Release/Debug keystore |
+
+## Additional Build Tasks
+
+<CodeGroup>
+```bash Clean Build
+# Remove all build artifacts
+./gradlew clean
+```
+
+```bash Install Debug
+# Build and install debug APK on connected device
+./gradlew installDebug
+```
+
+```bash Build Bundle
+# Create Android App Bundle for Play Store
+./gradlew bundleRelease
+```
+
+```bash Lint Check
+# Run lint analysis
+./gradlew lint
+```
+</CodeGroup>
+
+## ProGuard Configuration
+
+Release builds use ProGuard for code optimization and obfuscation. The configuration includes:
+
+- Default Android optimizations (`proguard-android-optimize.txt`)
+- Custom rules in `app/proguard-rules.pro`
+
+Minification and resource shrinking are enabled at `app/build.gradle.kts:52-54`
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Build fails with 'Unsupported class file major version'">
+    This means your Java version is incompatible. Ensure you're using JDK 21 or higher:
+    
+    ```bash
+    java -version
+    ```
+    
+    Update your `JAVA_HOME` environment variable if needed.
+  </Accordion>
+
+  <Accordion title="Gradle daemon issues">
+    The project includes automatic cleanup of large Gradle daemon logs. If you encounter daemon issues, try:
+    
+    ```bash
+    ./gradlew --stop
+    ./gradlew clean
+    ```
+  </Accordion>
+
+  <Accordion title="Missing SDK components">
+    If you see errors about missing SDK platforms or build tools:
+    
+    ```bash
+    # Using Android SDK command-line tools
+    sdkmanager "platforms;android-36" "build-tools;36.0.0"
+    ```
+  </Accordion>
+
+  <Accordion title="Build is very slow">
+    ThystTV includes LeakCanary in debug builds for memory leak detection. This can slow down builds. The project also uses:
+    - KSP (Kotlin Symbol Processing) for Hilt, Room, and Glide
+    - Apollo for GraphQL code generation
+    
+    Consider increasing Gradle memory:
+    ```properties
+    # gradle.properties
+    org.gradle.jvmargs=-Xmx4096m
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="diagram-project" href="/development/architecture">
+    Understand the app's structure and design patterns
+  </Card>
+  <Card title="Contributing" icon="code-pull-request" href="/development/contributing">
+    Learn how to contribute to ThystTV
+  </Card>
+</CardGroup>

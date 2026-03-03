@@ -1,0 +1,368 @@
+---
+title: Gesture System Architecture
+description: Architecture and implementation of the player gesture system
+---
+
+The ThystTV gesture system provides intuitive touch controls for video playback, including volume, brightness, seeking, and playback speed adjustments.
+
+## System Overview
+
+The gesture system is implemented as a state machine that handles touch events and provides visual feedback to users. It's designed to be non-intrusive, configurable, and conflict-free with other UI interactions.
+
+## Core Components
+
+### 1. PlayerGestureListener
+
+**Location**: `ui/player/PlayerGestureListener.kt`
+
+**Role**: Central state machine that processes touch events
+
+**Key Responsibilities**:
+- Detects gesture types based on screen zones
+- Manages gesture lifecycle (Down → Scroll → Up/Cancel)
+- Prevents conflicts with other gestures (tap controls, minimize gesture)
+- Applies user settings (sensitivity, zone split, haptics)
+- Updates UI via `PlayerGestureCallback`
+
+```kotlin
+class PlayerGestureListener(
+    private val context: Context,
+    private val callback: PlayerGestureCallback,
+    private val doubleTapEnabled: Boolean,
+    private val gesturesEnabled: Boolean = true,
+    private val hapticEnabled: Boolean = false,
+    private val sensitivity: Float = 1.0f,
+    private val zoneSplit: Float = 0.5f
+) : GestureDetector.SimpleOnGestureListener()
+```
+
+<Note>
+The listener extends Android's `GestureDetector.SimpleOnGestureListener` to leverage built-in gesture detection.
+</Note>
+
+### 2. PlayerGestureHelper
+
+**Location**: `ui/player/PlayerGestureHelper.kt`
+
+**Role**: Stateless helper class for calculations and formatting
+
+**Key Responsibilities**:
+- Calculating volume/brightness values
+- Formatting time duration strings
+- Mapping percentages to icon levels
+- Determining swipe directionality
+- Checking zone boundaries
+
+```kotlin
+class PlayerGestureHelper(private val context: Context) {
+    fun formatDuration(durationMs: Long): String
+    fun isHorizontalSwipe(deltaX: Float, deltaY: Float, threshold: Float): Boolean
+    fun isVerticalSwipe(deltaX: Float, deltaY: Float, threshold: Float): Boolean
+    fun calculateNewBrightness(currentBrightness: Float, delta: Float): Float
+    // ...
+}
+```
+
+### 3. PlayerGestureCallback
+
+**Location**: `ui/player/PlayerGestureListener.kt` (Interface)
+
+**Role**: Interface implemented by `PlayerFragment` to expose player state and control methods
+
+```kotlin
+interface PlayerGestureCallback {
+    val isPortrait: Boolean
+    val isMaximized: Boolean
+    val isControlsVisible: Boolean
+    val screenWidth: Int
+    val screenHeight: Int
+    
+    fun seek(position: Long)
+    fun setPlaybackSpeed(speed: Float)
+    fun setWindowAttributes(params: WindowManager.LayoutParams)
+    fun getGestureFeedbackView(): View
+    fun onSwipeGestureStarted()
+    fun onSwipeGestureEnded()
+    // ...
+}
+```
+
+## State Machine Logic
+
+The gesture system uses boolean flags to track the current gesture state during a scroll event sequence.
+
+### State Flags
+
+```kotlin
+private var isVolume = false
+private var isBrightness = false
+private var isSeek = false
+private var isSpeed = false
+private var isScrolling = false
+private var hasNotifiedGestureStart = false
+```
+
+<Info>
+These flags are mutually exclusive - only one gesture type can be active at a time.
+</Info>
+
+### State Transitions
+
+<Accordion title="State Machine Diagram">
+
+```
+┌─────────────┐
+│  ACTION_DOWN│
+│  (onDown)   │
+│  Reset flags│
+└──────┬──────┘
+       │
+       ▼
+┌──────────────────────┐
+│   ACTION_MOVE        │
+│   (onScroll)         │
+│                      │
+│   First significant  │
+│   movement:          │
+│   Determine gesture  │
+│   type based on:     │
+│   - Direction        │
+│   - Screen zone      │
+│   - Video type       │
+└──────┬───────────────┘
+       │
+       ├─ Vertical + Left Half  → isBrightness = true
+       ├─ Vertical + Right Half → isVolume = true
+       ├─ Horizontal + Top Zone → isSeek = true (VoD only)
+       └─ Horizontal + Bottom   → isSpeed = true (VoD only)
+       │
+       ▼
+┌──────────────────────┐
+│   Gesture Locked     │
+│   Apply continuous   │
+│   updates based on   │
+│   movement delta     │
+└──────┬───────────────┘
+       │
+       ▼
+┌──────────────────────┐
+│   ACTION_UP          │
+│   Gesture complete   │
+│   onSwipeGestureEnded│
+└──────────────────────┘
+```
+
+</Accordion>
+
+### Gesture Detection Logic
+
+**Vertical Swipes** (Volume/Brightness):
+
+```kotlin
+if (abs(distanceY) > abs(distanceX)) {
+    if (e1.x < width / 2) {
+        isBrightness = true
+        startBrightness = callback.windowAttributes.screenBrightness
+    } else {
+        isVolume = true
+        startVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+    }
+}
+```
+
+**Horizontal Swipes** (Seek/Speed - VoD only):
+
+```kotlin
+else {
+    if (callback.getPlayerVideoType() != PlayerFragment.STREAM) {
+        if (e1.y < height * zoneSplit) {
+            isSeek = true
+            startPosition = callback.getCurrentPosition() ?: 0L
+        } else {
+            isSpeed = true
+            startSpeed = callback.getCurrentSpeed() ?: 1f
+        }
+    }
+}
+```
+
+## Zone Configuration
+
+### Screen Zones
+
+**Vertical Swipes**:
+- Left 50%: Brightness control
+- Right 50%: Volume control
+
+**Horizontal Swipes** (VoD only):
+- Top X% (configurable via `zoneSplit`): Seek/scrub through video
+- Bottom Y%: Playback speed adjustment
+
+<Note>
+The `zoneSplit` parameter allows customization of the top/bottom zone boundary. Common values: 0.4, 0.5, 0.6
+</Note>
+
+### Gesture Blocking Conditions
+
+Gestures are blocked when:
+- Touch started in edge zone (system gesture area)
+- Controls were visible when gesture started
+- Player is in portrait mode
+- Player is not maximized
+- Master gestures toggle is disabled
+
+```kotlin
+if (callback.isPortrait || !callback.isMaximized || 
+    callback.isEdgeSwipe || callback.controlsVisibleAtGestureStart) {
+    return false
+}
+```
+
+## Gesture Calculations
+
+### Brightness Adjustment
+
+```kotlin
+val percentY = (gestureStartY - e2.y) / height
+val rawBrightness = startBrightness + percentY
+val isAuto = rawBrightness < 0.05f
+val newBrightness = if (isAuto) -1f else rawBrightness.coerceIn(0.05f, 1.0f)
+```
+
+### Volume Adjustment
+
+```kotlin
+val percentY = (gestureStartY - e2.y) / height
+val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+val newVolume = (startVolume + (percentY * maxVolume)).toInt().coerceIn(0, maxVolume)
+```
+
+### Seek Calculation
+
+```kotlin
+val percentX = (e2.x - gestureStartX) / width
+val baseSeekSeconds = 90  // 90 seconds per full screen width
+val seekAmount = (percentX * baseSeekSeconds * 1000 * sensitivity).toLong()
+val newPosition = (startPosition + seekAmount).coerceIn(0, duration)
+```
+
+<Info>
+The base seek rate is 90 seconds per screen width, adjusted by the sensitivity multiplier (0.5x, 1.0x, or 2.0x).
+</Info>
+
+### Speed Adjustment
+
+```kotlin
+val percentX = (e2.x - gestureStartX) / width
+val speedChange = (percentX * 2.0f * sensitivity)
+var newSpeed = startSpeed + speedChange
+newSpeed = (Math.round(newSpeed * 20) / 20.0f).coerceIn(0.25f, 4.0f)
+```
+
+## Visual Feedback
+
+The gesture system provides real-time visual feedback through an overlay view:
+
+**Feedback Components**:
+- Icon: Indicates gesture type (volume, brightness, seek, speed)
+- Progress bar: Shows current level/position
+- Text: Displays numeric value or formatted duration
+
+**Feedback Lifecycle**:
+1. Gesture starts → Show feedback view
+2. Continuous updates → Update icon, progress, text
+3. Gesture ends → Hide feedback after 800ms
+
+```kotlin
+feedback.visibility = View.VISIBLE
+feedback.removeCallbacks(callback.getHideGestureRunnable())
+feedback.postDelayed(callback.getHideGestureRunnable(), 800)
+```
+
+## Haptic Feedback
+
+Optional haptic feedback is provided at gesture start and on double-tap:
+
+```kotlin
+private fun performHapticFeedback() {
+    if (hapticEnabled) {
+        val view = callback.getGestureFeedbackView()
+        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+    }
+}
+```
+
+## Configuration Settings
+
+Gesture behavior can be customized through SharedPreferences:
+
+**Settings Location**: `xml/player_preferences.xml`
+**Constants**: `util/C.kt`
+
+**Configurable Parameters**:
+- `gesturesEnabled`: Master toggle
+- `sensitivity`: Multiplier for seek/speed (0.5f, 1.0f, 2.0f)
+- `zoneSplit`: Top/bottom zone ratio (0.4f, 0.5f, 0.6f)
+- `hapticEnabled`: Haptic feedback toggle
+- `doubleTapEnabled`: Double-tap to toggle chat mode
+
+## Testing
+
+### Unit Tests
+
+**Location**: `app/src/test/java/com/github/andreyasadchy/xtra/ui/player/PlayerGestureHelperTest.kt`
+
+**Coverage**:
+- Pure function calculations (volume, brightness, formatting)
+- Zone boundary checks
+- Swipe direction detection
+
+<Note>
+`PlayerGestureListener` integration testing is done manually due to `MotionEvent` mocking complexities.
+</Note>
+
+## Adding New Gestures
+
+<Steps>
+  <Step title="Add State Flag">
+    Add a new boolean flag in `PlayerGestureListener` to track the gesture state.
+    
+    ```kotlin
+    private var isMyNewGesture = false
+    ```
+  </Step>
+  
+  <Step title="Define Detection Logic">
+    Add detection logic in `onScroll()` to determine when your gesture should activate.
+    
+    ```kotlin
+    if (/* your conditions */) {
+        isMyNewGesture = true
+        // Capture initial state
+    }
+    ```
+  </Step>
+  
+  <Step title="Implement Callback Methods">
+    Add necessary methods to `PlayerGestureCallback` if the gesture requires new player interactions.
+  </Step>
+  
+  <Step title="Add Visual Feedback">
+    Update `layout_player_gesture_feedback.xml` if new UI elements are needed.
+  </Step>
+</Steps>
+
+## Performance Considerations
+
+- **State Locking**: Once a gesture type is determined, it remains locked until `ACTION_UP`
+- **Minimal Allocations**: Reuses existing views and avoids object creation in hot paths
+- **Debouncing**: Feedback view updates are debounced with 800ms delay
+- **Conflict Prevention**: Single gesture prevents tap and other gestures from firing simultaneously
+
+## Related Files
+
+- `ui/player/PlayerGestureListener.kt:312` - Main gesture listener
+- `ui/player/PlayerGestureHelper.kt:178` - Helper utilities
+- `ui/player/PlayerFragment.kt` - Implements `PlayerGestureCallback`
+- `xml/player_preferences.xml` - User settings
+- `util/C.kt` - Preference constants

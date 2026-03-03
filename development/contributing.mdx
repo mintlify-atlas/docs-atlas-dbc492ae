@@ -1,0 +1,485 @@
+---
+title: Contributing Guidelines
+description: How to contribute to ThystTV development
+---
+
+## Welcome Contributors!
+
+ThystTV is a community-driven fork of Xtra with a focus on viewer experience, data management, and accessibility. We welcome contributions of all kinds!
+
+<Note>
+  This project is experimental and mostly vibe coded. Features are tested manually but may have rough edges. Your contributions help make it better!
+</Note>
+
+## How to Contribute
+
+<CardGroup cols={2}>
+  <Card title="Report Bugs" icon="bug">
+    Found a bug? Open an issue with detailed reproduction steps
+  </Card>
+  <Card title="Suggest Features" icon="lightbulb">
+    Have an idea? Share it in the discussions or issues
+  </Card>
+  <Card title="Write Code" icon="code">
+    Fix bugs, add features, or improve existing code
+  </Card>
+  <Card title="Improve Docs" icon="book">
+    Help us document features and improve guides
+  </Card>
+</CardGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Fork the Repository">
+    Create your own fork of the ThystTV repository:
+    
+    ```bash
+    # Clone your fork
+    git clone https://github.com/YOUR_USERNAME/ThystTV.git
+    cd ThystTV
+    ```
+  </Step>
+
+  <Step title="Set Up Development Environment">
+    Follow the [Building from Source](/development/building) guide to set up your environment:
+    
+    - JDK 21+
+    - Android SDK (API 36)
+    - Android Studio (recommended)
+  </Step>
+
+  <Step title="Create a Feature Branch">
+    Always create a new branch for your changes:
+    
+    ```bash
+    git checkout -b feature/your-feature-name
+    # or
+    git checkout -b fix/bug-description
+    ```
+  </Step>
+
+  <Step title="Make Your Changes">
+    Write your code following our coding standards (see below)
+  </Step>
+
+  <Step title="Test Your Changes">
+    Ensure your changes work correctly:
+    
+    ```bash
+    # Run unit tests
+    ./gradlew test
+    
+    # Build and test on device
+    ./gradlew installDebug
+    ```
+  </Step>
+
+  <Step title="Submit a Pull Request">
+    Push your changes and create a pull request with a clear description
+  </Step>
+</Steps>
+
+## Development Workflow
+
+### Branch Naming Convention
+
+Use descriptive branch names that indicate the purpose:
+
+<CodeGroup>
+```bash Features
+feature/floating-chat-resize
+feature/gesture-haptic-feedback
+feature/stats-export
+```
+
+```bash Bug Fixes
+fix/gesture-scroll-conflict
+fix/chat-overlay-crash
+fix/memory-leak-player
+```
+
+```bash Documentation
+docs/gesture-system
+docs/architecture-overview
+```
+
+```bash Refactoring
+refactor/repository-pattern
+refactor/remove-deprecated-api
+```
+</CodeGroup>
+
+### Commit Messages
+
+Write clear, descriptive commit messages:
+
+<CodeGroup>
+```bash Good Examples
+git commit -m "Add haptic feedback option to gesture settings"
+git commit -m "Fix tap detection after scroll gestures"
+git commit -m "Update Room database to schema version 15"
+```
+
+```bash Bad Examples
+git commit -m "fix bug"          # Too vague
+git commit -m "WIP"              # Not descriptive
+git commit -m "asdfasdf"         # Meaningless
+```
+</CodeGroup>
+
+## Coding Standards
+
+### Kotlin Style Guide
+
+Follow the [official Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html):
+
+<CodeGroup>
+```kotlin Naming
+// Classes: PascalCase
+class PlayerGestureListener
+
+// Functions and variables: camelCase
+fun calculateVolume()
+val isScrolling = false
+
+// Constants: SCREAMING_SNAKE_CASE
+const val MAX_VOLUME = 100
+
+// Private properties: prefix with underscore (optional)
+private val _gestureState = MutableStateFlow<GestureState>()
+```
+
+```kotlin Formatting
+// Use 4 spaces for indentation
+fun processGesture(
+    event: MotionEvent,
+    sensitivity: Float,
+    hapticEnabled: Boolean
+) {
+    // Function body
+}
+
+// Line length: 120 characters (recommended)
+// Break long lines at logical points
+```
+</CodeGroup>
+
+### Architecture Patterns
+
+Follow the existing architecture patterns:
+
+<Tabs>
+  <Tab title="MVVM">
+    Use ViewModel for UI logic:
+    
+    ```kotlin
+    class StatsViewModel @Inject constructor(
+        private val repository: StatsRepository
+    ) : ViewModel() {
+        
+        private val _screenTime = MutableStateFlow<ScreenTimeData?>(null)
+        val screenTime: StateFlow<ScreenTimeData?> = _screenTime.asStateFlow()
+        
+        fun loadStats() {
+            viewModelScope.launch {
+                repository.getScreenTime().collect { data ->
+                    _screenTime.value = data
+                }
+            }
+        }
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Repository Pattern">
+    Abstract data sources:
+    
+    ```kotlin
+    class StreamRepository @Inject constructor(
+        private val api: TwitchApi,
+        private val database: AppDatabase
+    ) {
+        fun getStreams(): Flow<PagingData<Stream>> {
+            return Pager(
+                config = PagingConfig(pageSize = 30),
+                pagingSourceFactory = { StreamPagingSource(api) }
+            ).flow
+        }
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Dependency Injection">
+    Use Hilt for dependencies:
+    
+    ```kotlin
+    @HiltViewModel
+    class PlayerViewModel @Inject constructor(
+        private val repository: VideoRepository,
+        private val preferences: SharedPreferences
+    ) : ViewModel()
+    
+    @AndroidEntryPoint
+    class PlayerFragment : Fragment()
+    ```
+  </Tab>
+</Tabs>
+
+### Code Organization
+
+<Steps>
+  <Step title="Package Structure">
+    Place files in appropriate packages:
+    - UI components → `ui/feature/`
+    - Data models → `model/`
+    - Repositories → `repository/`
+    - Database → `db/`
+    - DI modules → `di/`
+    - Utilities → `util/`
+  </Step>
+
+  <Step title="File Naming">
+    Use descriptive names that match the class:
+    - `PlayerGestureListener.kt`
+    - `StatsViewModel.kt`
+    - `ScreenTimeDao.kt`
+  </Step>
+
+  <Step title="Single Responsibility">
+    Each class should have one clear purpose. If a class is doing too much, split it:
+    - `PlayerGestureListener` - State machine
+    - `PlayerGestureHelper` - Calculations
+    - `PlayerGestureCallback` - Interface
+  </Step>
+</Steps>
+
+## Testing Guidelines
+
+### Writing Tests
+
+Add tests for new features and bug fixes:
+
+<CodeGroup>
+```kotlin Unit Tests
+@Test
+fun `calculateVolume should increase by delta`() {
+    val helper = PlayerGestureHelper(mockContext)
+    val currentVolume = 5
+    val delta = 2
+    
+    val newVolume = helper.calculateVolume(currentVolume, delta)
+    
+    assertEquals(7, newVolume)
+}
+```
+
+```kotlin ViewModel Tests
+@Test
+fun `loadStats should update state flow`() = runTest {
+    val repository = FakeStatsRepository()
+    val viewModel = StatsViewModel(repository)
+    
+    viewModel.loadStats()
+    advanceUntilIdle()
+    
+    assertNotNull(viewModel.screenTime.value)
+}
+```
+</CodeGroup>
+
+### Running Tests
+
+```bash
+# Run all tests
+./gradlew test
+
+# Run specific test class
+./gradlew test --tests PlayerGestureHelperTest
+
+# Run with coverage
+./gradlew testDebugUnitTest
+```
+
+<Note>
+  While we strive for test coverage, manual testing on real devices is crucial for UI features, especially gestures and media playback.
+</Note>
+
+## Pull Request Guidelines
+
+### Before Submitting
+
+<AccordionGroup>
+  <Accordion title="Code Quality Checklist">
+    - [ ] Code follows Kotlin coding conventions
+    - [ ] No compiler warnings
+    - [ ] Lint checks pass
+    - [ ] Unit tests added/updated
+    - [ ] Manual testing completed
+    - [ ] No memory leaks (check with LeakCanary)
+  </Accordion>
+
+  <Accordion title="Documentation Checklist">
+    - [ ] Code is well-commented
+    - [ ] Public APIs have KDoc documentation
+    - [ ] README.md updated if needed
+    - [ ] Architecture docs updated if applicable
+  </Accordion>
+
+  <Accordion title="Performance Checklist">
+    - [ ] No blocking operations on main thread
+    - [ ] Database queries optimized
+    - [ ] Images loaded asynchronously
+    - [ ] Lists use paging for large datasets
+  </Accordion>
+</AccordionGroup>
+
+### PR Description Template
+
+Provide a clear description of your changes:
+
+```markdown
+## Description
+Brief description of what this PR does
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
+
+## Testing
+- Tested on: Device/Emulator, Android version
+- Test scenarios:
+  1. Scenario 1
+  2. Scenario 2
+
+## Screenshots (if applicable)
+[Add screenshots here]
+
+## Related Issues
+Fixes #123
+Related to #456
+```
+
+### Review Process
+
+1. **Automated Checks**: Ensure CI passes (if configured)
+2. **Code Review**: Maintainers will review your code
+3. **Feedback**: Address review comments
+4. **Approval**: Once approved, your PR will be merged
+
+<Note>
+  Be patient! Reviews may take time. Feel free to ping maintainers if there's no response after a week.
+</Note>
+
+## Areas Where We Need Help
+
+Here are some areas where contributions are especially welcome:
+
+<CardGroup cols={2}>
+  <Card title="Testing" icon="flask">
+    - Write unit tests for existing features
+    - Integration tests for repositories
+    - UI tests for critical flows
+  </Card>
+  
+  <Card title="Performance" icon="gauge-high">
+    - Optimize database queries
+    - Reduce memory usage
+    - Improve app startup time
+  </Card>
+  
+  <Card title="Accessibility" icon="universal-access">
+    - Add content descriptions
+    - Improve TalkBack support
+    - Keyboard navigation
+  </Card>
+  
+  <Card title="Documentation" icon="book">
+    - Code documentation
+    - User guides
+    - Architecture documentation
+  </Card>
+</CardGroup>
+
+## Feature Requests & Bug Reports
+
+### Reporting Bugs
+
+When reporting bugs, include:
+
+<CodeGroup>
+```markdown Bug Report Template
+**Describe the bug**
+Clear description of what went wrong
+
+**To Reproduce**
+1. Go to '...'
+2. Click on '...'
+3. See error
+
+**Expected behavior**
+What should have happened
+
+**Screenshots**
+If applicable, add screenshots
+
+**Device info:**
+- Device: [e.g. Pixel 7]
+- Android version: [e.g. 14]
+- App version: [e.g. 1.1.2]
+
+**Additional context**
+Any other relevant information
+```
+</CodeGroup>
+
+### Suggesting Features
+
+When suggesting features:
+
+1. **Check existing issues** to avoid duplicates
+2. **Explain the use case** - why is this needed?
+3. **Describe the solution** - how should it work?
+4. **Consider alternatives** - are there other approaches?
+5. **Add mockups** if applicable
+
+## Code of Conduct
+
+Be respectful and constructive:
+
+- Be welcoming to newcomers
+- Respect differing viewpoints
+- Accept constructive criticism
+- Focus on what's best for the project
+- Show empathy towards other contributors
+
+## Getting Help
+
+Need help with your contribution?
+
+<CardGroup cols={2}>
+  <Card title="Architecture Docs" icon="book" href="/development/architecture">
+    Understand the codebase structure
+  </Card>
+  <Card title="Building Guide" icon="hammer" href="/development/building">
+    Set up your development environment
+  </Card>
+</CardGroup>
+
+<Note>
+  Don't hesitate to ask questions in issues or discussions. We're here to help!
+</Note>
+
+## License
+
+By contributing to ThystTV, you agree that your contributions will be licensed under the [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.en.html), the same license as the project.
+
+<Warning>
+  The AGPL-3.0 license is a copyleft license. Make sure you understand its implications before contributing.
+</Warning>
+
+---
+
+Thank you for contributing to ThystTV! Every contribution, no matter how small, makes a difference.

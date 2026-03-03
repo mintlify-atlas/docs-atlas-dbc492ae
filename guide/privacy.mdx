@@ -1,0 +1,472 @@
+---
+title: Privacy & Data Storage
+description: How ThystTV handles your data
+icon: shield
+---
+
+ThystTV is built with a privacy-first approach. All your data stays on your device, and you have full control over what is stored.
+
+## Privacy First Philosophy
+
+<Info>
+**All stats are stored locally on your device and are never shared.**
+</Info>
+
+ThystTV does not:
+- Send your viewing data to third-party servers
+- Track your behavior for analytics
+- Share your watch history
+- Upload your preferences to the cloud
+- Collect personal information beyond what Twitch requires
+
+## Local Data Storage
+
+All app data is stored locally on your Android device. Here's what ThystTV stores:
+
+### Watch Statistics
+
+<Accordion title="Screen Time & Stats">
+
+**What We Track Locally**
+
+- Daily viewing time
+- Per-stream watch duration
+- Most-watched channels
+- Most-watched categories/games
+- Watch session history
+- Watch streaks
+
+**Why It's Stored**
+
+These statistics power the Stats tab, allowing you to:
+- Monitor your daily screen time
+- See your viewing patterns
+- Track your most-watched content
+- Visualize your viewing history with charts
+
+**Where It's Stored**
+
+All watch statistics are stored in a local SQLite database:
+```
+/data/data/com.github.andreyasadchy.xtra/databases/database
+```
+
+This database never leaves your device.
+
+</Accordion>
+
+### User Preferences
+
+<Accordion title="Settings & Configuration">
+
+**What's Stored**
+
+- All app settings and preferences
+- Theme selections
+- Chat customizations
+- Gesture sensitivity settings
+- Quality preferences
+- Player configurations
+
+**Storage Location**
+
+Preferences are stored using Android's SharedPreferences API with encryption:
+```
+/data/data/com.github.andreyasadchy.xtra/shared_prefs/
+```
+
+**Security**
+
+Sensitive preferences (like authentication tokens) are stored using Android's EncryptedSharedPreferences for additional security.
+
+</Accordion>
+
+### Follows & Bookmarks
+
+<Accordion title="Local Follows">
+
+**What's Stored**
+
+- Locally followed channels (when not logged in)
+- Locally followed games
+- Bookmarked VODs
+- Video positions (resume points)
+- Saved filters
+- Recent searches
+
+**Database Tables**
+
+- `LocalFollowsChannel`: Channels you follow locally
+- `LocalFollowsGame`: Games you follow locally
+- `Bookmarks`: Saved VODs
+- `VideoPositions`: Where you left off in VODs
+- `RecentSearch`: Search history
+
+**Privacy Control**
+
+You can clear this data anytime:
+- Settings → UI Settings → Delete recent searches
+- Settings → Player Settings → Delete video positions
+
+</Accordion>
+
+### Downloaded Content
+
+<Accordion title="Offline Downloads">
+
+**Storage Locations**
+
+Downloaded VODs are stored in:
+- Internal storage: `/Android/data/com.github.andreyasadchy.xtra/files/.downloads/`
+- External SD card (if configured)
+
+**What's Stored**
+
+- Downloaded video files
+- Download metadata (title, channel, duration)
+- Thumbnail images
+
+**Managing Downloads**
+
+- View all downloads in the Saved → Downloads tab
+- Delete downloads individually or in bulk
+- Move downloads between storage locations
+
+</Accordion>
+
+### Chat Data
+
+<Accordion title="Chat Storage">
+
+**What's Cached**
+
+- Recent emotes (for autocomplete)
+- Cached emote images (BTTV, FFZ, 7TV)
+- Cached badges
+- Translation language models (on-device ML)
+- User color preferences
+
+**Privacy Features**
+
+- Chat messages are **not** stored permanently
+- Only kept in memory during active viewing
+- Cleared when you close the stream
+- Translation happens on-device (no cloud API)
+
+**Emote Cache**
+
+Emote images are cached to:
+```
+/data/data/com.github.andreyasadchy.xtra/cache/
+```
+
+This reduces bandwidth and improves performance. Cache is automatically managed by Android.
+
+</Accordion>
+
+## Authentication & Tokens
+
+### Twitch Authentication
+
+<Accordion title="How Authentication Works">
+
+**OAuth Flow**
+
+When you log in to Twitch:
+1. You're redirected to Twitch's official login page
+2. You authorize ThystTV to access your Twitch account
+3. Twitch provides an access token
+4. Token is stored securely on your device
+
+**What ThystTV Can Access**
+
+With your permission, ThystTV can:
+- View your followed channels
+- Follow/unfollow channels on your behalf
+- Read chat messages
+- Send chat messages (if you type them)
+- Collect channel points
+- Access subscriber-only content (if you're subscribed)
+
+**What ThystTV Cannot Do**
+
+- Change your Twitch password
+- Access your email
+- Make purchases
+- View your payment information
+- Access your account without your permission
+
+</Accordion>
+
+### Token Security
+
+<Accordion title="Secure Token Storage">
+
+**Encryption**
+
+Authentication tokens are stored using Android's secure storage mechanisms:
+
+- **EncryptedSharedPreferences**: For access tokens
+- **Android Keystore**: For encryption keys
+- Hardware-backed security on supported devices
+
+**Token Migration**
+
+ThystTV automatically migrates tokens from legacy storage to encrypted storage on first launch.
+
+**Token Expiration**
+
+Tokens expire after a period defined by Twitch. You'll be prompted to re-authenticate when needed.
+
+</Accordion>
+
+## Third-Party Services
+
+### What Third-Party Services Does ThystTV Use?
+
+<Accordion title="External Connections">
+
+**Twitch API**
+- Purpose: Stream playback, chat, authentication
+- Data sent: Your authentication token (if logged in)
+- Privacy: Governed by Twitch's privacy policy
+
+**7TV API** (optional, if enabled)
+- Purpose: Third-party emotes and badges
+- Data sent: Channel name to fetch emotes
+- Privacy: No personal data sent
+
+**BTTV API** (optional, if enabled)
+- Purpose: Third-party emotes
+- Data sent: Channel name to fetch emotes
+- Privacy: No personal data sent
+
+**FFZ API** (optional, if enabled)
+- Purpose: Third-party emotes
+- Data sent: Channel name to fetch emotes
+- Privacy: No personal data sent
+
+**Stream Proxy** (optional, if configured)
+- Purpose: Alternative stream delivery
+- Default: `api.ttv.lol`
+- Data sent: Channel name, quality preferences
+- Privacy: Governed by proxy provider's policy
+
+<Note>
+You can disable third-party emote providers in Chat Settings if you prefer not to connect to these services.
+</Note>
+
+</Accordion>
+
+## Data Export & Deletion
+
+### Managing Your Data
+
+<Accordion title="Backup Your Data">
+
+**Export Settings**
+
+1. Go to Settings → Backup settings
+2. Choose a save location
+3. A database backup file is created
+
+**What's Included**
+
+- All app settings
+- Local follows
+- Bookmarks
+- Video positions
+- Watch statistics
+- Saved filters
+
+**Restore on Another Device**
+
+1. Copy backup file to new device
+2. Install ThystTV
+3. Go to Settings → Restore settings
+4. Select backup file
+
+</Accordion>
+
+<Accordion title="Delete Your Data">
+
+**Partial Deletion**
+
+Delete specific data types:
+- Settings → UI Settings → Delete recent searches
+- Settings → Player Settings → Delete video positions
+- Saved → Downloads → Delete downloads
+
+**Complete Deletion**
+
+To delete all ThystTV data:
+
+1. **Android Settings** → Apps → ThystTV
+2. **Storage** → Clear storage
+3. **Uninstall** (optional)
+
+This removes:
+- All settings
+- All statistics
+- All downloaded content
+- All cached data
+- Authentication tokens
+
+<Warning>
+This action cannot be undone. Create a backup first if you might want to restore later.
+</Warning>
+
+</Accordion>
+
+## Notifications
+
+<Accordion title="Live Notification Privacy">
+
+**How Notifications Work**
+
+When you enable live notifications:
+
+1. ThystTV periodically checks Twitch API for followed channels
+2. If a channel goes live, a local notification is shown
+3. No notification data is sent to third-party servers
+
+**What's Stored**
+
+- List of channels you've been notified about
+- Prevents duplicate notifications
+- Stored in local database table `ShownNotifications`
+
+**Disabling Notifications**
+
+- Settings → Live notifications (toggle off)
+- Android Settings → Apps → ThystTV → Notifications
+
+</Accordion>
+
+## Network Privacy
+
+### What Network Requests Does ThystTV Make?
+
+<Accordion title="Network Activity">
+
+**Always Required**
+- Twitch API requests (stream data, chat, authentication)
+- Stream video/audio playback
+
+**Optional (Based on Settings)**
+- Third-party emote APIs (7TV, BTTV, FFZ)
+- Stream proxy (if configured)
+- Update checks (if enabled)
+
+**Never Sent**
+- Your watch statistics
+- Your viewing history
+- Your app settings
+- Analytics or telemetry
+
+</Accordion>
+
+### HTTPS & Security
+
+<Accordion title="Connection Security">
+
+**Encrypted Connections**
+
+All network requests use HTTPS:
+- Twitch API: HTTPS
+- Stream playback: HTTPS
+- Chat: WSS (WebSocket Secure)
+- Third-party APIs: HTTPS
+
+**Certificate Pinning**
+
+ThystTV validates SSL certificates to prevent man-in-the-middle attacks.
+
+</Accordion>
+
+## Permissions
+
+### Why Does ThystTV Need These Permissions?
+
+<Accordion title="Android Permissions Explained">
+
+**Storage Permission**
+- **Purpose**: Save downloaded VODs, backup/restore settings
+- **When requested**: First download or backup attempt
+- **Required for**: Downloads feature, Settings backup
+
+**Network Permission**
+- **Purpose**: Stream playback, chat, API requests
+- **When requested**: Automatically granted (normal permission)
+- **Required for**: All core functionality
+
+**Notification Permission** (Android 13+)
+- **Purpose**: Live notifications when channels go online
+- **When requested**: When enabling live notifications
+- **Required for**: Live notification feature only
+
+**Vibration Permission**
+- **Purpose**: Haptic feedback for gestures
+- **When requested**: Automatically granted (normal permission)
+- **Required for**: Gesture haptic feedback feature
+
+<Note>
+All permissions are optional except Network. The app will function without granting Storage, Notification, or Vibration permissions, but related features will be unavailable.
+</Note>
+
+</Accordion>
+
+## Open Source Transparency
+
+ThystTV is a fork of Xtra, an open-source project:
+
+- Source code is publicly available
+- Anyone can audit the code for privacy concerns
+- Licensed under GNU AGPL v3.0
+- Community contributions are welcome
+
+<Info>
+Being open source means there are no hidden data collection mechanisms. You can verify exactly what ThystTV does with your data by reviewing the source code.
+</Info>
+
+## Your Privacy Rights
+
+### You Have Full Control
+
+<Accordion title="What You Can Do">
+
+**View Your Data**
+- Access all stored data via the Stats tab
+- View settings in the Settings screen
+- Inspect downloads in Saved → Downloads
+
+**Export Your Data**
+- Create backups of all local data
+- Transfer between devices
+- Keep offline copies
+
+**Delete Your Data**
+- Clear specific data types
+- Wipe all data via Android settings
+- Uninstall the app completely
+
+**Disable Features**
+- Turn off watch statistics tracking
+- Disable live notifications
+- Disable third-party emote services
+- Use without Twitch login
+
+</Accordion>
+
+## Questions About Privacy?
+
+If you have concerns about how ThystTV handles your data:
+
+1. **Review the source code** - It's open source and publicly auditable
+2. **Check the database** - Use a SQLite browser to inspect local data (requires root or backup extraction)
+3. **Monitor network activity** - Use network monitoring tools to see what requests ThystTV makes
+4. **Report issues** - If you find privacy concerns, report them on GitHub
+
+<Note>
+ThystTV is developed as a community project. There is no commercial interest in collecting your data.
+</Note>

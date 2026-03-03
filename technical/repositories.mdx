@@ -1,0 +1,328 @@
+---
+title: 'Repository Layer'
+description: 'Repository pattern implementation and data access layer'
+icon: 'layer-group'
+---
+
+## Overview
+
+ThystTV implements the Repository pattern to provide a clean API for data access. Repositories abstract the data layer, handling both local database operations and network requests to Twitch APIs.
+
+## Architecture Pattern
+
+The repository layer follows these principles:
+
+- **Single Source of Truth**: Repositories are the authoritative data source for ViewModels
+- **Dependency Injection**: All repositories are singletons injected via Hilt
+- **Coroutine-based**: All operations use Kotlin coroutines for async execution
+- **Context Switching**: Network/DB operations execute on `Dispatchers.IO`
+
+## Local Data Repositories
+
+These repositories manage local database operations.
+
+### BookmarksRepository
+
+Manages saved video bookmarks with file cleanup logic.
+
+```kotlin
+@Singleton
+class BookmarksRepository @Inject constructor(
+    private val bookmarksDao: BookmarksDao,
+    private val videosDao: VideosDao
+) {
+    fun loadBookmarksFlow() = bookmarksDao.getAllFlow()
+    
+    suspend fun loadBookmarks() = withContext(Dispatchers.IO) {
+        bookmarksDao.getAll()
+    }
+    
+    suspend fun getBookmarkByVideoId(id: String) = withContext(Dispatchers.IO) {
+        bookmarksDao.getByVideoId(id)
+    }
+    
+    suspend fun saveBookmark(item: Bookmark) = withContext(Dispatchers.IO) {
+        bookmarksDao.insert(item)
+    }
+    
+    suspend fun deleteBookmark(item: Bookmark) = withContext(Dispatchers.IO) {
+        // Clean up cached thumbnails and logos
+        if (!item.videoId.isNullOrBlank() && videosDao.getByVideoId(item.videoId).isEmpty()) {
+            item.thumbnail?.let { File(it).delete() }
+        }
+        if (!item.userId.isNullOrBlank() && 
+            getBookmarksByUserId(item.userId).none { it.id != item.id }) {
+            item.userLogo?.let { File(it).delete() }
+        }
+        bookmarksDao.delete(item)
+    }
+}
+```
+
+<Accordion title="Why file cleanup in repository?">
+  When deleting bookmarks, the repository checks if the associated video or channel has other references. If not, it deletes cached image files to free up storage. This business logic is centralized in the repository rather than scattered across ViewModels.
+</Accordion>
+
+### LocalFollowChannelRepository
+
+Manages local channel follows for non-authenticated users.
+
+```kotlin
+@Singleton
+class LocalFollowChannelRepository @Inject constructor(
+    private val localFollowsChannelDao: LocalFollowsChannelDao
+) {
+    suspend fun loadFollows() = withContext(Dispatchers.IO) {
+        localFollowsChannelDao.getAll()
+    }
+    
+    suspend fun getFollowByUserId(id: String) = withContext(Dispatchers.IO) {
+        localFollowsChannelDao.getByUserId(id)
+    }
+    
+    suspend fun saveFollow(item: LocalFollowChannel) = withContext(Dispatchers.IO) {
+        localFollowsChannelDao.insert(item)
+    }
+    
+    suspend fun deleteFollow(item: LocalFollowChannel) = withContext(Dispatchers.IO) {
+        localFollowsChannelDao.delete(item)
+    }
+}
+```
+
+## Network Repositories
+
+These repositories handle API communication with Twitch services.
+
+### GraphQLRepository
+
+Handles all Twitch GraphQL API requests with multi-network library support.
+
+```kotlin
+@Singleton
+class GraphQLRepository @Inject constructor(
+    private val httpEngine: Lazy<HttpEngine>?,
+    private val cronetEngine: Lazy<CronetEngine>?,
+    private val cronetExecutor: ExecutorService,
+    private val okHttpClient: OkHttpClient,
+    private val json: Json
+) {
+    private suspend fun <T: Query.Data> sendQuery(
+        networkLibrary: String?,
+        headers: Map<String, String>,
+        query: Query<T>
+    ): ApolloResponse<T>
+}
+```
+
+<Accordion title="Network Library Selection">
+  GraphQLRepository supports three network backends:
+  
+  1. **HttpEngine** - Android's new HTTP client (Android S+, API 31+)
+  2. **Cronet** - Google's Chromium network stack
+  3. **OkHttp** - Fallback for older devices
+  
+  The library is selected at runtime based on user preferences and device capabilities.
+</Accordion>
+
+#### Key GraphQL Operations
+
+<Expandable title="Stream Operations">
+```kotlin
+suspend fun loadQueryTopStreams(
+    networkLibrary: String?,
+    headers: Map<String, String>,
+    sort: StreamSort?,
+    tags: List<String>?,
+    languages: List<Language>?,
+    first: Int?,
+    after: String?
+): ApolloResponse<TopStreamsQuery.Data>
+
+suspend fun loadQueryUserFollowedStreams(
+    networkLibrary: String?,
+    headers: Map<String, String>,
+    first: Int?,
+    after: String?
+): ApolloResponse<UserFollowedStreamsQuery.Data>
+```
+</Expandable>
+
+<Expandable title="Video Operations">
+```kotlin
+suspend fun loadQueryVideo(
+    networkLibrary: String?,
+    headers: Map<String, String>,
+    id: String?
+): ApolloResponse<VideoQuery.Data>
+
+suspend fun loadQueryUserVideos(
+    networkLibrary: String?,
+    headers: Map<String, String>,
+    id: String?,
+    login: String?,
+    sort: VideoSort?,
+    types: List<BroadcastType>?,
+    first: Int?,
+    after: String?
+): ApolloResponse<UserVideosQuery.Data>
+```
+</Expandable>
+
+<Expandable title="Playback Token">
+```kotlin
+suspend fun loadPlaybackAccessToken(
+    networkLibrary: String?,
+    headers: Map<String, String>,
+    login: String? = null,
+    vodId: String? = null,
+    playerType: String?
+): PlaybackAccessTokenResponse
+```
+
+This is crucial for video playback - it retrieves the access token and signature required to fetch HLS playlists.
+</Expandable>
+
+### HelixRepository
+
+Handles Twitch Helix REST API requests.
+
+```kotlin
+@Singleton
+class HelixRepository @Inject constructor(
+    private val httpEngine: Lazy<HttpEngine>?,
+    private val cronetEngine: Lazy<CronetEngine>?,
+    private val cronetExecutor: ExecutorService,
+    private val okHttpClient: OkHttpClient,
+    private val json: Json
+)
+```
+
+#### Common Helix Operations
+
+<ParamField path="getStreams" type="suspend function">
+  Fetch live streams by user IDs, logins, or game ID
+  
+  ```kotlin
+  suspend fun getStreams(
+      networkLibrary: String?,
+      headers: Map<String, String>,
+      ids: List<String>? = null,
+      logins: List<String>? = null,
+      gameId: String? = null,
+      languages: List<String>? = null,
+      limit: Int? = null,
+      offset: String? = null
+  ): StreamsResponse
+  ```
+</ParamField>
+
+<ParamField path="getUsers" type="suspend function">
+  Fetch user information
+  
+  ```kotlin
+  suspend fun getUsers(
+      networkLibrary: String?,
+      headers: Map<String, String>,
+      ids: List<String>? = null,
+      logins: List<String>? = null
+  ): UsersResponse
+  ```
+</ParamField>
+
+<ParamField path="getVideos" type="suspend function">
+  Fetch VODs and clips
+  
+  ```kotlin
+  suspend fun getVideos(
+      networkLibrary: String?,
+      headers: Map<String, String>,
+      ids: List<String>? = null,
+      gameId: String? = null,
+      channelId: String? = null,
+      period: String? = null,
+      broadcastType: String? = null,
+      sort: String? = null,
+      language: String? = null,
+      limit: Int? = null,
+      offset: String? = null
+  ): VideosResponse
+  ```
+</ParamField>
+
+### PlayerRepository
+
+Specialized repository for playback-related operations.
+
+```kotlin
+@Singleton
+class PlayerRepository @Inject constructor(
+    private val httpEngine: Lazy<HttpEngine>?,
+    private val cronetEngine: Lazy<CronetEngine>?,
+    private val cronetExecutor: ExecutorService,
+    private val okHttpClient: OkHttpClient,
+    private val json: Json,
+    private val graphQLRepository: GraphQLRepository,
+    private val helixRepository: HelixRepository,
+    private val recentEmotes: RecentEmotesDao,
+    private val videoPositions: VideoPositionsDao
+)
+```
+
+<Accordion title="PlayerRepository Responsibilities">
+  - Fetch playback access tokens
+  - Load HLS playlists
+  - Manage video positions for resume
+  - Handle third-party emote services (BTTV, FFZ, 7TV)
+  - Load chat badges and emotes
+  - Fetch recent chat messages
+</Accordion>
+
+## Data Source Pattern
+
+For paginated content, ThystTV uses custom DataSource classes:
+
+```kotlin
+class FollowedStreamsDataSource(
+    private val helixClientId: String?,
+    private val helixToken: String?,
+    private val helixApi: HelixApi,
+    private val gqlClientId: String?,
+    private val gqlApi: GraphQLApi
+) : PagingSource<Int, Stream>()
+```
+
+These integrate with Jetpack Paging 3 for efficient infinite scrolling.
+
+## Repository Dependency Graph
+
+```
+ViewModel
+    ↓
+Repository
+    ↓
+    ├─→ DAO (Room Database)
+    ├─→ GraphQLRepository (Twitch GQL API)
+    ├─→ HelixRepository (Twitch Helix API)
+    └─→ PlayerRepository (Playback & Chat)
+```
+
+## Error Handling
+
+Repositories use `withContext(Dispatchers.IO)` for all operations and let exceptions propagate to ViewModels, which handle them appropriately for UI display.
+
+## Testing Considerations
+
+All repositories are interfaces or concrete classes with constructor injection, making them easily mockable for unit tests:
+
+```kotlin
+class BookmarksRepositoryTest {
+    private val mockDao = mock<BookmarksDao>()
+    private val repository = BookmarksRepository(mockDao, mockVideosDao)
+    
+    @Test
+    fun `loadBookmarks returns data from DAO`() = runTest {
+        // Test implementation
+    }
+}
+```

@@ -1,0 +1,329 @@
+---
+title: 'Data Models'
+description: 'Database entities and data models used in ThystTV'
+icon: 'database'
+---
+
+## Overview
+
+ThystTV uses Room Database for local data persistence. The app maintains 18 distinct entities covering user statistics, content bookmarks, offline downloads, and app preferences.
+
+## Statistics Models
+
+These models track user viewing behavior and analytics.
+
+### ScreenTime
+
+Tracks total screen time per day.
+
+```kotlin
+@Entity(tableName = "screen_time")
+data class ScreenTime(
+    @PrimaryKey val date: String,
+    val totalSeconds: Long
+)
+```
+
+<ParamField path="date" type="String">
+  Date in `yyyy-MM-dd` format
+</ParamField>
+
+<ParamField path="totalSeconds" type="Long">
+  Total seconds watched on this date
+</ParamField>
+
+### WatchStreak
+
+Tracks consecutive days of watching streams.
+
+```kotlin
+@Entity(tableName = "watch_streak")
+data class WatchStreak(
+    @PrimaryKey val id: Int = 1,
+    val currentStreakDays: Int,
+    val longestStreakDays: Int,
+    val lastWatchDate: String,
+    val streakStartDate: String?
+)
+```
+
+<Accordion title="WatchStreak Fields">
+  <ParamField path="id" type="Int">
+    Always 1 (single row table)
+  </ParamField>
+  
+  <ParamField path="currentStreakDays" type="Int">
+    Current consecutive days watched
+  </ParamField>
+  
+  <ParamField path="longestStreakDays" type="Int">
+    Longest streak ever achieved
+  </ParamField>
+  
+  <ParamField path="lastWatchDate" type="String">
+    Last watch date in `yyyy-MM-dd` format
+  </ParamField>
+  
+  <ParamField path="streakStartDate" type="String?">
+    When current streak started
+  </ParamField>
+</Accordion>
+
+### WatchSession
+
+Detailed tracking of individual watch sessions.
+
+```kotlin
+@Entity(
+    tableName = "watch_sessions",
+    indices = [
+        Index(value = ["channelId"]),
+        Index(value = ["gameId"]),
+        Index(value = ["startTime"]),
+        Index(value = ["date"])
+    ]
+)
+data class WatchSession(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val channelId: String?,
+    val channelName: String?,
+    val channelLogin: String?,
+    val gameId: String?,
+    val gameName: String?,
+    val startTime: Long,
+    val endTime: Long,
+    val durationSeconds: Long,
+    val date: String,
+    val hourOfDay: Int
+)
+```
+
+<Expandable title="Why multiple indices?">
+  The indices on `channelId`, `gameId`, `startTime`, and `date` enable fast queries for:
+  - Finding all sessions for a specific channel or game
+  - Time-based analytics (hourly breakdown, daily summaries)
+  - Peak viewing time analysis
+</Expandable>
+
+### StreamWatchStats
+
+Aggregated watch statistics per channel.
+
+```kotlin
+@Entity(tableName = "stream_watch_stats")
+data class StreamWatchStats(
+    @PrimaryKey val channelId: String,
+    val channelName: String,
+    val totalSecondsWatched: Long,
+    val lastWatchedTimestamp: Long
+)
+```
+
+## Content Models
+
+### Bookmark
+
+Saved videos and clips for later viewing.
+
+```kotlin
+@Entity(tableName = "bookmarks")
+class Bookmark(
+    val videoId: String? = null,
+    val userId: String? = null,
+    var userLogin: String? = null,
+    var userName: String? = null,
+    var userType: String? = null,
+    var userBroadcasterType: String? = null,
+    var userLogo: String? = null,
+    val gameId: String? = null,
+    val gameSlug: String? = null,
+    val gameName: String? = null,
+    val title: String? = null,
+    val createdAt: String? = null,
+    val thumbnail: String? = null,
+    val type: String? = null,
+    val duration: String? = null,
+    val animatedPreviewURL: String? = null
+) {
+    @PrimaryKey(autoGenerate = true)
+    var id = 0
+}
+```
+
+### OfflineVideo
+
+Downloaded videos stored locally.
+
+```kotlin
+@Entity(tableName = "videos")
+class OfflineVideo(
+    var url: String? = null,
+    @ColumnInfo(name = "source_url") val sourceUrl: String? = null,
+    @ColumnInfo(name = "source_start_position") var sourceStartPosition: Long? = null,
+    var name: String? = null,
+    @ColumnInfo(name = "channel_id") var channelId: String? = null,
+    @ColumnInfo(name = "channel_login") var channelLogin: String? = null,
+    @ColumnInfo(name = "channel_name") var channelName: String? = null,
+    @ColumnInfo(name = "channel_logo") var channelLogo: String? = null,
+    var thumbnail: String? = null,
+    var duration: Long? = null,
+    var progress: Int = 0,
+    var status: Int = STATUS_PENDING
+) {
+    @PrimaryKey(autoGenerate = true)
+    var id = 0
+    
+    companion object {
+        const val STATUS_PENDING = 0
+        const val STATUS_DOWNLOADING = 1
+        const val STATUS_DOWNLOADED = 2
+        const val STATUS_MOVING = 3
+        const val STATUS_DELETING = 4
+        const val STATUS_CONVERTING = 5
+        const val STATUS_BLOCKED = 6
+        const val STATUS_QUEUED = 7
+        const val STATUS_QUEUED_WIFI = 8
+        const val STATUS_WAITING_FOR_STREAM = 9
+    }
+}
+```
+
+<Accordion title="Download Status Values">
+  - **STATUS_PENDING** (0): Queued but not started
+  - **STATUS_DOWNLOADING** (1): Currently downloading
+  - **STATUS_DOWNLOADED** (2): Download complete
+  - **STATUS_MOVING** (3): Moving file to storage
+  - **STATUS_DELETING** (4): Being deleted
+  - **STATUS_CONVERTING** (5): Converting format
+  - **STATUS_BLOCKED** (6): Download blocked
+  - **STATUS_QUEUED** (7): In download queue
+  - **STATUS_QUEUED_WIFI** (8): Waiting for WiFi
+  - **STATUS_WAITING_FOR_STREAM** (9): Waiting for live stream to start
+</Accordion>
+
+### VideoPosition
+
+Tracks playback position for resume functionality.
+
+```kotlin
+@Entity(tableName = "video_positions")
+class VideoPosition(
+    @PrimaryKey val id: Long,
+    val position: Long
+)
+```
+
+## User Preferences
+
+### LocalFollowChannel
+
+Locally stored channel follows (for non-authenticated users).
+
+```kotlin
+@Entity(tableName = "local_follows")
+class LocalFollowChannel(
+    val userId: String? = null,
+    var userLogin: String? = null,
+    var userName: String? = null,
+    var channelLogo: String? = null
+) {
+    @PrimaryKey(autoGenerate = true)
+    var id = 0
+}
+```
+
+### RecentSearch
+
+Search history for quick access.
+
+```kotlin
+@Entity(tableName = "recent_search")
+class RecentSearch(
+    val query: String,
+    val type: String,
+    val lastSearched: Long
+) {
+    @PrimaryKey(autoGenerate = true)
+    var id = 0
+    
+    companion object {
+        const val TYPE_CHANNEL = "channel"
+        const val TYPE_GAME = "game"
+        const val TYPE_STREAM = "stream"
+        const val TYPE_VIDEO = "video"
+    }
+}
+```
+
+### RecentEmote
+
+Tracks recently used emotes in chat.
+
+```kotlin
+@Entity(tableName = "recent_emotes")
+class RecentEmote(
+    @PrimaryKey val name: String,
+    @ColumnInfo(name = "used_at") val usedAt: Long
+) {
+    companion object {
+        const val MAX_SIZE = 50
+    }
+}
+```
+
+### NotificationUser
+
+Channels with notifications enabled.
+
+```kotlin
+@Entity(tableName = "notifications")
+class NotificationUser(
+    @PrimaryKey val channelId: String
+)
+```
+
+## Database Configuration
+
+The main database class aggregates all entities:
+
+```kotlin
+@Database(
+    entities = [
+        OfflineVideo::class,
+        RecentEmote::class,
+        VideoPosition::class,
+        LocalFollowChannel::class,
+        LocalFollowGame::class,
+        Bookmark::class,
+        VodBookmarkIgnoredUser::class,
+        SortChannel::class,
+        SortGame::class,
+        ShownNotification::class,
+        NotificationUser::class,
+        TranslateAllMessagesUser::class,
+        SavedFilter::class,
+        RecentSearch::class,
+        ScreenTime::class,
+        StreamWatchStats::class,
+        WatchSession::class,
+        WatchStreak::class
+    ],
+    version = 35
+)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun videos(): VideosDao
+    abstract fun recentEmotes(): RecentEmotesDao
+    abstract fun videoPositions(): VideoPositionsDao
+    abstract fun localFollowsChannel(): LocalFollowsChannelDao
+    abstract fun bookmarks(): BookmarksDao
+    abstract fun screenTimeDao(): ScreenTimeDao
+    abstract fun streamWatchStatsDao(): StreamWatchStatsDao
+    abstract fun watchSessionDao(): WatchSessionDao
+    abstract fun watchStreakDao(): WatchStreakDao
+    // ... additional DAOs
+}
+```
+
+## Migration Strategy
+
+The database is currently at version 35, indicating extensive evolution. Room handles schema migrations automatically for simple changes, with custom migrations for complex transformations.

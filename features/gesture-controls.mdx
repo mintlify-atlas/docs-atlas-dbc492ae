@@ -1,0 +1,319 @@
+---
+title: Gesture Controls  
+description: Intuitive touch gestures for controlling video playback, volume, brightness, and speed
+---
+
+Gesture Controls provide intuitive swipe-based interactions for adjusting playback without obscuring the video. Control volume, brightness, seeking, and playback speed with simple touch gestures.
+
+## Overview
+
+ThystTV's gesture system divides the screen into zones, with each zone controlling a different aspect of playback:
+
+- **Left half (vertical swipe)**: Brightness
+- **Right half (vertical swipe)**: Volume  
+- **Top zone (horizontal swipe)**: Seek forward/backward _(VODs only)_
+- **Bottom zone (horizontal swipe)**: Playback speed _(VODs only)_
+
+<Note>
+Gesture controls only work in **landscape mode** when the player is **maximized** and **controls are hidden**. Tap once to hide the controls, then swipe to use gestures.
+</Note>
+
+## Enabling Gesture Controls
+
+Gesture controls are enabled by default. To toggle:
+
+1. Go to **Settings** > **Player** > **Gestures**
+2. Toggle **Enable Gestures** on or off
+
+## Volume Control
+
+### How to Use
+
+<Steps>
+  <Step title="Position your finger">
+    Place your finger on the **right half** of the screen.
+  </Step>
+  
+  <Step title="Swipe vertically">
+    - Swipe **up** to increase volume
+    - Swipe **down** to decrease volume
+  </Step>
+  
+  <Step title="Check the indicator">
+    A volume indicator appears showing:
+    - Speaker icon (or muted icon at 0%)
+    - Volume percentage (0-100%)
+    - Progress bar
+  </Step>
+</Steps>
+
+### Behavior
+
+- Adjusts system media volume (same as hardware volume buttons)
+- Changes apply immediately during the swipe
+- Volume is clamped between 0% (mute) and 100% (max)
+- Indicator auto-hides after 800ms
+
+<Tip>
+For precise volume adjustments, use slower swipe movements. The gesture system responds proportionally to your swipe distance.
+</Tip>
+
+## Brightness Control
+
+### How to Use
+
+<Steps>
+  <Step title="Position your finger">
+    Place your finger on the **left half** of the screen.
+  </Step>
+  
+  <Step title="Swipe vertically">
+    - Swipe **up** to increase brightness
+    - Swipe **down** to decrease brightness  
+  </Step>
+  
+  <Step title="Check the indicator">
+    A brightness indicator shows:
+    - Sun icon
+    - Brightness percentage (5-100%) or "Auto"
+    - Progress bar
+  </Step>
+</Steps>
+
+### Behavior
+
+- Adjusts app-level brightness (only affects ThystTV, not system brightness)
+- Minimum brightness: 5% (prevents completely black screen)
+- Swipe to the very bottom to enable **Auto** mode (uses system brightness)
+- Setting persists only for the current session
+- Returns to your system brightness when you exit the player
+
+<Note>
+Brightness changes only apply while the video is playing. Your device's global brightness setting remains unchanged.
+</Note>
+
+## Seeking (VODs Only)
+
+Seeking gestures allow you to skip forward or rewind through video content.
+
+### How to Use
+
+<Steps>
+  <Step title="Position your finger">
+    Place your finger in the **top portion** of the screen (configurable zone split).
+  </Step>
+  
+  <Step title="Swipe horizontally">
+    - Swipe **right** to seek forward  
+    - Swipe **left** to rewind
+  </Step>
+  
+  <Step title="Check the indicator">
+    The seek indicator displays:
+    - Plus (+) or minus (-) icon
+    - Current position / total duration
+    - Progress bar showing position in video
+  </Step>
+</Steps>
+
+### Behavior
+
+- **Base sensitivity**: Full screen swipe = 90 seconds of seek time
+- **Sensitivity multiplier**: Adjustable in settings (0.5x, 1x, 2x)
+- Seeking updates in real-time as you swipe
+- Position is clamped between 0:00 and video duration
+- Indicator auto-hides after 800ms
+
+<Accordion title="Why can't I seek on live streams?">
+  Seeking gestures are disabled for live streams because there's no recorded content to skip through. For VODs (video on demand) and clips, seeking works as expected.
+</Accordion>
+
+## Playback Speed (VODs Only)
+
+Adjust how fast or slow the video plays.
+
+### How to Use  
+
+<Steps>
+  <Step title="Position your finger">
+    Place your finger in the **bottom portion** of the screen (below the seek zone).
+  </Step>
+  
+  <Step title="Swipe horizontally">
+    - Swipe **right** to increase speed
+    - Swipe **left** to decrease speed
+  </Step>
+  
+  <Step title="Check the indicator">
+    The speed indicator shows:
+    - Speedometer icon
+    - Current speed (e.g., "1.50x")
+    - Progress bar (mapped from 0.25x to 4.0x)
+  </Step>
+</Steps>
+
+### Behavior
+
+- **Speed range**: 0.25x (very slow) to 4.0x (very fast)
+- **Increments**: 0.05x steps (rounds to nearest 0.05)
+- **Base sensitivity**: Full swipe = 2.0x speed change  
+- **Sensitivity multiplier**: Adjustable in settings
+- Normal speed (1.0x) is the default
+- Speed changes apply immediately
+
+<Tip>
+Playback speed is great for:
+- **0.5x-0.75x**: Catching details in fast-paced gameplay
+- **1.25x-1.5x**: Speeding through slower content
+- **2.0x+**: Quickly reviewing VODs
+</Tip>
+
+## Gesture Settings
+
+Customize gesture behavior to match your preferences.
+
+### Sensitivity
+
+Controls how much change occurs per swipe distance:
+
+- **Low (0.5x)**: Requires larger swipes for the same change (more precise)
+- **Medium (1x)**: Default balanced sensitivity _(recommended)_  
+- **High (2x)**: Smaller swipes cause larger changes (faster adjustments)
+
+To adjust:
+
+1. Go to **Settings** > **Player** > **Gestures**  
+2. Select **Sensitivity**
+3. Choose Low, Medium, or High
+
+### Zone Split
+
+Defines where the seek zone ends and the speed zone begins (for horizontal swipes):
+
+- **40%**: Larger speed zone, smaller seek zone
+- **50%**: Equal split _(default)_
+- **60%**: Larger seek zone, smaller speed zone  
+
+To adjust:
+
+1. Go to **Settings** > **Player** > **Gestures**
+2. Select **Zone Split**  
+3. Choose your preferred ratio
+
+<Note>
+If you primarily use seeking, choose 60%. If you adjust speed frequently, choose 40%.
+</Note>
+
+### Haptic Feedback
+
+Provides a subtle vibration when a gesture starts:
+
+- Confirms that your swipe was recognized
+- Helps distinguish between gestures and accidental touches
+- Optional (can be disabled for silent operation)
+
+To enable:
+
+1. Go to **Settings** > **Player** > **Gestures**
+2. Toggle **Haptic Feedback** on
+
+## Gesture Conflict Prevention
+
+The gesture system intelligently prevents conflicts:
+
+### Edge Swipes
+
+Swipes starting near screen edges are ignored to avoid conflicts with:
+- Android system navigation gestures  
+- Back gestures
+- Status bar pull-down
+
+**Edge threshold**: 30dp from screen edges (or system gesture insets)
+
+### Controls Visible
+
+When player controls are visible:
+- Vertical swipes are disabled (prevents accidental volume/brightness changes)
+- You can still interact with control buttons
+- Swipe down from the top to minimize the player
+
+### Progress Bar
+
+When scrubbing the progress bar:
+- All other gestures are disabled  
+- Gesture indicators are hidden
+- Touch focus remains on the scrubber
+
+### Double-Tap
+
+If double-tap is enabled (for cycling chat modes):
+- Single taps show/hide controls
+- Double taps cycle chat modes  
+- Gestures remain available when controls are hidden
+
+## Visual Feedback
+
+All gestures display real-time visual feedback:
+
+### Indicator Components
+
+- **Icon**: Identifies the gesture type (volume, brightness, seek, speed)
+- **Text**: Shows current value or position  
+- **Progress bar**: Visualizes the level/position
+- **Auto-hide**: Disappears 800ms after gesture ends
+
+### Indicator Position
+
+Feedback appears centered on screen, overlaying the video without obscuring important content.
+
+## Troubleshooting
+
+<Accordion title="Gestures aren't working">
+  Check that:
+  - You're in **landscape mode**
+  - Player is **maximized** (not minimized)
+  - Player **controls are hidden** (tap once to hide)
+  - Gestures are **enabled** in settings
+  - Your swipe **doesn't start near screen edges**
+</Accordion>
+
+<Accordion title="Volume/brightness changes too much">
+  Lower the sensitivity setting to **Low (0.5x)** for more precise control.
+</Accordion>
+
+<Accordion title="Can't seek or change speed">
+  These gestures only work for VODs and clips, not live streams. Verify you're watching recorded content.
+</Accordion>
+
+<Accordion title="Gestures conflict with controls">
+  This is intentional. Gestures are disabled when controls are visible. Tap the video to hide controls, then use gestures.
+</Accordion>
+
+<Accordion title="Haptic feedback isn't working">
+  - Ensure haptic feedback is enabled in ThystTV settings
+  - Check that your device supports haptics
+  - Verify that vibration isn't disabled in system settings
+</Accordion>
+
+## Advanced Tips
+
+### Multi-Touch
+
+The gesture system supports multi-touch:
+- Only the first touch pointer is tracked
+- Additional touches are ignored
+- Release all fingers to end the gesture
+
+### Gesture Locking
+
+Once a gesture starts (e.g., volume), it "locks" to that mode:
+- Prevents accidental mode switching mid-swipe  
+- Lock releases when you lift your finger
+- Allows continuous adjustment in one direction
+
+### Sensitivity Tuning
+
+For the best experience:
+- **Tablets**: Use Low sensitivity (larger screen = larger swipes)  
+- **Phones**: Use Medium or High sensitivity
+- **Personal preference**: Experiment to find what feels natural

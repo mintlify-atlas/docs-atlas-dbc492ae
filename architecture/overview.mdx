@@ -1,0 +1,184 @@
+---
+title: Architecture Overview
+description: High-level architecture patterns and components used in ThystTV
+---
+
+ThystTV is a third-party Twitch client for Android built with modern Android architecture patterns and best practices.
+
+## Architecture Patterns
+
+### MVVM (Model-View-ViewModel)
+
+ThystTV follows the MVVM architecture pattern throughout the application:
+
+- **Model**: Data layer consisting of repositories, DAOs, and data sources
+- **View**: UI components (Fragments and Activities) that observe ViewModels
+- **ViewModel**: Business logic layer that exposes UI state via StateFlow/LiveData
+
+<Note>
+All ViewModels in ThystTV are annotated with `@HiltViewModel` and use constructor injection for dependencies.
+</Note>
+
+### Key Components
+
+#### 1. Dependency Injection (Hilt)
+
+ThystTV uses Dagger Hilt for dependency injection:
+
+```kotlin
+@HiltViewModel
+class StatsViewModel @Inject constructor(
+    private val repository: StatsRepository
+) : ViewModel()
+```
+
+**Hilt Modules**:
+- `DatabaseModule` (`di/DatabaseModule.kt`): Provides Room database and DAO instances
+- `ThystTVModule` (`di/ThystTVModule.kt`): Application-level dependencies
+
+#### 2. Data Persistence (Room)
+
+The app uses Room for local data persistence with a centralized database:
+
+- **Database**: `AppDatabase` (`db/AppDatabase.kt`) - version 35
+- **Entities**: Screen time, watch stats, watch sessions, bookmarks, local follows, etc.
+- **DAOs**: Data Access Objects for type-safe database queries
+
+<Info>
+The database includes 35 migrations to maintain backward compatibility across app versions.
+</Info>
+
+**Key Tables**:
+- `screen_time` - Daily viewing statistics
+- `stream_watch_stats` - Per-channel watch statistics
+- `watch_sessions` - Detailed session tracking for analytics
+- `watch_streak` - User watch streak information
+- `bookmarks` - Saved videos and clips
+- `local_follows` - Locally tracked channels and games
+
+#### 3. Reactive Streams (Kotlin Flow)
+
+ThystTV uses Kotlin Coroutines and Flow for asynchronous operations:
+
+```kotlin
+val screenTime: StateFlow<List<ScreenTime>> = repository.getAllScreenTime()
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+```
+
+**Flow Types Used**:
+- `StateFlow` - For UI state that always has a value
+- `SharedFlow` - For events that may have multiple subscribers
+- `Flow` - For cold streams from Room DAOs
+
+#### 4. Repository Pattern
+
+Repositories abstract data sources and provide a clean API for ViewModels:
+
+```kotlin
+class StatsRepository @Inject constructor(
+    private val screenTimeDao: ScreenTimeDao,
+    private val streamWatchStatsDao: StreamWatchStatsDao,
+    private val watchSessionDao: WatchSessionDao,
+    private val watchStreakDao: WatchStreakDao
+)
+```
+
+Repositories handle:
+- Data aggregation from multiple DAOs
+- Business logic for data transformations
+- Coordination between local and remote data sources
+
+## Project Structure
+
+```
+app/src/main/java/com/github/andreyasadchy/xtra/
+├── db/                    # Room database and DAOs
+├── di/                    # Hilt dependency injection modules
+├── model/                 # Data models and entities
+├── repository/            # Data repositories
+├── ui/                    # UI layer (Fragments, ViewModels)
+│   ├── chat/             # Chat system components
+│   ├── player/           # Video player and gestures
+│   ├── stats/            # Statistics and analytics
+│   └── ...
+└── util/                  # Utility classes and helpers
+```
+
+## State Management
+
+### ViewModel State
+
+ViewModels expose UI state through StateFlow:
+
+```kotlin
+private val _categoryBreakdown = MutableStateFlow<List<CategoryWatchTime>>(emptyList())
+val categoryBreakdown: StateFlow<List<CategoryWatchTime>> = _categoryBreakdown.asStateFlow()
+```
+
+### Fragment Observation
+
+Fragments observe state changes using lifecycle-aware coroutines:
+
+```kotlin
+viewLifecycleOwner.lifecycleScope.launch {
+    viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+        viewModel.screenTime.collectLatest { screenTimes ->
+            updateScreenTimeDisplay(binding, screenTimes)
+        }
+    }
+}
+```
+
+<Note>
+Using `repeatOnLifecycle(Lifecycle.State.STARTED)` ensures flows are only collected when the UI is visible, preventing unnecessary work and memory leaks.
+</Note>
+
+## Threading Model
+
+- **Main Thread**: UI updates and Fragment/Activity lifecycle
+- **IO Dispatcher**: Database operations, network requests
+- **Default Dispatcher**: CPU-intensive operations
+
+Room DAOs automatically handle threading:
+
+```kotlin
+@Query("SELECT * FROM screen_time ORDER BY date DESC")
+fun getAllScreenTime(): Flow<List<ScreenTime>>
+```
+
+## Key Architectural Decisions
+
+### 1. Single Activity Architecture
+
+ThystTV uses fragments within a single activity for navigation, leveraging the Android Navigation component.
+
+### 2. Separation of Concerns
+
+- **UI Layer**: Only displays data, handles user input
+- **ViewModel Layer**: Business logic, state management
+- **Repository Layer**: Data operations, caching
+- **Data Layer**: Database and network access
+
+### 3. Unidirectional Data Flow
+
+```
+User Action → ViewModel → Repository → Database/Network
+                ↓
+           StateFlow
+                ↓
+              View
+```
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Gesture System" href="./gesture-system" icon="hand-pointer">
+    Deep dive into the player gesture architecture
+  </Card>
+  <Card title="Statistics Tracking" href="./statistics" icon="chart-line">
+    Analytics and statistics architecture
+  </Card>
+  <Card title="Chat System" href="./chat-system" icon="comments">
+    Real-time chat and replay architecture
+  </Card>
+</CardGroup>

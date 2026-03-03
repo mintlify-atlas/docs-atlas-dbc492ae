@@ -1,0 +1,199 @@
+---
+title: Watch Statistics
+description: Track your viewing habits with detailed screen time analytics and insights
+---
+
+Watch Statistics provides comprehensive insights into your ThystTV viewing habits, including daily screen time, watch streaks, category breakdowns, and streamer loyalty metrics.
+
+## Accessing Statistics
+
+View your watch statistics from the main menu:
+
+1. Tap the menu icon (≡) in the top-left corner
+2. Select **Statistics** from the navigation menu
+3. Your stats dashboard will load with all available data
+
+## Screen Time Overview
+
+### Daily Bar Chart
+
+The daily bar chart shows your watch time for the past 7 days:
+
+- **Today**: Highlighted with a "Today" label
+- **Previous days**: Labeled with day abbreviations (Mon, Tue, etc.)
+- **Bar height**: Represents total minutes watched that day
+- **Interactive**: Tap any bar to see exact watch time
+
+### Key Metrics
+
+<Accordion title="Daily Average">
+  Your average watch time per day over the past week, calculated from the last 7 days of data. Displayed in hours and minutes format (e.g., "2 hr 45 min").
+</Accordion>
+
+<Accordion title="Today's Time">
+  Total time spent watching streams and videos today. Updates in real-time as you watch content.
+</Accordion>
+
+<Accordion title="Week Total">
+  Combined watch time across all 7 days shown in the bar chart. Helps you understand your weekly viewing patterns.
+</Accordion>
+
+<Accordion title="Week Change">
+  Comparison with the previous week, showing whether your watch time increased or decreased (e.g., "↑ from last week").
+</Accordion>
+
+## Watch Streaks
+
+Track your consistency with daily watch streaks:
+
+### Current Streak
+
+The number of consecutive days you've watched content on ThystTV. A day counts toward your streak if you watch for any amount of time.
+
+### Longest Streak
+
+Your all-time record for consecutive days of watching. This milestone is saved permanently.
+
+<Tip>
+Watch at least a few minutes every day to maintain your streak! Even brief viewing sessions count.
+</Tip>
+
+<Note>
+Streaks reset at midnight in your local timezone. Make sure to open a stream before the day ends to keep your streak alive.
+</Note>
+
+## Category Breakdown
+
+### Pie Chart Visualization
+
+The category pie chart displays your watch time distribution across Twitch categories (games) for the last 30 days:
+
+- **Color-coded slices**: Each category has a unique color
+- **Size indicates time**: Larger slices = more time spent watching that category
+- **Percentage labels**: Shows what portion of your total watch time went to each category
+
+### Category Legend
+
+Below the pie chart, a scrollable legend lists all categories with:
+
+- **Category name**: The game or category title
+- **Total time**: Hours and minutes spent watching
+- **Percentage**: Share of your total watch time
+- **Color indicator**: Matches the pie chart slice
+
+<Accordion title="Why are some categories showing as 'Unknown'?">
+  If a stream didn't have a category set or the category data wasn't available, it appears as "Unknown" in the breakdown. This typically happens with older VODs or streams that changed categories mid-broadcast.
+</Accordion>
+
+## Hourly Breakdown
+
+The heatmap visualization shows which hours of the day you typically watch content:
+
+### Reading the Heatmap
+
+- **Horizontal axis**: Hours of the day (0-23, using 24-hour format)
+- **Color intensity**: Darker colors indicate more watch time during that hour
+- **Data range**: Based on the last 30 days
+
+### Use Cases
+
+- **Identify peak hours**: See when you watch the most
+- **Plan your schedule**: Understand your viewing patterns
+- **Track changes**: Notice shifts in your daily routine
+
+<Tip>
+The heatmap uses your local timezone, so "12" represents noon in your area.
+</Tip>
+
+## Top Streams
+
+A ranked list of the streamers you've watched the most:
+
+### Metrics Shown
+
+- **Rank**: Position in your top streams list (1-10)
+- **Streamer name**: Channel name or display name
+- **Total watch time**: Cumulative time spent watching this streamer
+- **Stream count**: Number of different streams/sessions watched
+
+### Sorting
+
+Streams are sorted by total watch time in descending order, with your most-watched streamer at the top.
+
+## Streamer Loyalty
+
+Identifies streamers you consistently watch:
+
+### Loyalty Metrics
+
+- **Consistency**: How regularly you watch this streamer
+- **Recent activity**: Whether you've watched them in the past week
+- **Total sessions**: Number of times you've tuned in
+
+<Note>
+Streamer loyalty is calculated based on both total watch time and viewing frequency. Watching a streamer regularly, even for shorter periods, can rank higher than occasional marathon sessions.
+</Note>
+
+## Data Privacy
+
+All watch statistics are stored **locally on your device**:
+
+- No data is sent to external servers
+- Statistics are private and never shared
+- You can clear your history anytime from Settings
+- Data persists across app updates
+
+## Clearing Statistics
+
+To reset your watch statistics:
+
+1. Go to **Settings** > **Data & Privacy**
+2. Tap **Clear Watch History**
+3. Confirm the action
+
+<Warning>
+Clearing watch statistics is permanent and cannot be undone. All metrics, including streaks and category data, will be reset to zero.
+</Warning>
+
+## Technical Details
+
+### What Counts as Watch Time
+
+- Only active playback counts toward statistics
+- Paused or buffering time is excluded
+- Background playback (audio-only) counts as watch time
+- Minimum increment: 1 second
+
+### Data Collection
+
+ThystTV tracks:
+
+- Start and end time of viewing sessions
+- Channel/streamer information
+- Category/game being streamed
+- Video type (live stream, VOD, clip)
+
+### Storage Limits
+
+Statistics are stored indefinitely unless manually cleared. The database uses minimal storage (typically under 1 MB even with months of data).
+
+## Troubleshooting
+
+<Accordion title="Statistics aren't updating">
+  Try these steps:
+  1. Make sure you're watching content for at least a few seconds
+  2. Close and reopen the Statistics page to refresh
+  3. Check that you're running the latest version of ThystTV
+  4. If issues persist, try clearing app cache (Settings > Storage)
+</Accordion>
+
+<Accordion title="Missing historical data">
+  Watch statistics began tracking after you first installed ThystTV. Data before installation or before enabling the feature is not available.
+</Accordion>
+
+<Accordion title="Inaccurate watch time">
+  Watch time is calculated from playback telemetry. If you notice discrepancies:
+  - Ensure your device clock is set correctly
+  - Check that the app isn't being force-stopped by battery optimization
+  - Very brief viewing sessions (under 5 seconds) may not be recorded
+</Accordion>
